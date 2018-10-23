@@ -38,6 +38,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace rtabmap {
 
+bool Transform::isInRange() const {
+	float x = 20.0;
+	float y = 20.0;
+	float range = 5.0;
+
+	float eq_distance = sqrt(pow((this->x() - x), 2) + pow((this->y() - y), 2));
+
+	return eq_distance <= range;
+}
+
 Transform::Transform() : data_(cv::Mat::zeros(3,4,CV_32FC1))
 {
 }
