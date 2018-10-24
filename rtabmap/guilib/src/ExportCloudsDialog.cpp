@@ -2912,6 +2912,12 @@ std::map<int, std::pair<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr, pcl::Indic
 			pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
 			pcl::IndicesPtr indices(new std::vector<int>);
 			Transform localTransform = Transform::getIdentity();
+
+			if (!iter->second.isInRange()) {
+			    ULOGGER_ERROR("Found a node in range");
+			    continue;
+			}
+
 			if(_ui->checkBox_regenerate->isChecked())
 			{
 				SensorData data;

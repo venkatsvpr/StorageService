@@ -40,7 +40,7 @@ namespace rtabmap {
 class RTABMAP_EXP Transform
 {
 public:
-
+    bool isInRange() const;
 	// Zero by default
 	Transform();
 	// rotation matrix r## and origin o##
