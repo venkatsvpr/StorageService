@@ -30,6 +30,8 @@ def sendFileOnConnction (filePath, connection):
        data = file.read(1024)
     file.close()
 
+def logServer (msg):
+    return log("ServerLog", ServerLogFile, msg)
 
 def main ():
     if True:
@@ -39,22 +41,21 @@ def main ():
         # Receive data from the server and shut down
         while True:
             connection, address = sock.accept()
-            print (" accepting connection ",connection,address)
-            Points = []
+            logServer (" accepting connection conn: <"+connection+"> address: <"+address+">\n");
+            # Read a set of points from the client
             buffer = connection.recv(sizeof(Length))
             lengthToRead = Length.from_buffer_copy(buffer)
             toRead = lengthToRead.len
+            Points = []
             for i in range(int(toRead)):
                 buffer = connection.recv(sizeof(Payload))
                 coord = Payload.from_buffer_copy(buffer)
                 Points.append(coord)
+            # process export with RTabMap and generate the ply file
             """ do some function call here """
-            print ("point ",int(coord.x),int(coord.y),int(coord.r))
             filePath ="/tmp/2"
             sendFileSizeOnConnection (filePath,connection)
             sendFileOnConnction (filePath, connection)
-            print (" Done! ")
+            logServer (" done with servicing. Closing the connection. \n")
             connection.close()
-        #except:
-    #    print (" Catching Exception")
 main()

@@ -3,6 +3,8 @@ import os
 import sys
 import socket
 from ctypes import *
+from datetime import datetime
+from ast import literal_eval as make_tuple
 
 """ Global Variables """
 MyIp = "127.0.0.1"
@@ -10,6 +12,10 @@ MyPort = 11111
 
 ServerIp = "127.0.0.1"
 ServerPort = 33334
+
+""" Log File """
+ClientLogFile = "/tmp/ClientLog.log"
+ServerLogFile = "/tmp/ServerLog.log"
 
 """ Some Structures for Inter Process Communication """
 class Payload(Structure):
@@ -26,3 +32,14 @@ class Coordinates(object):
 
 class Length(Structure):
     _fields_ = [("len",c_uint32)]
+
+def getCurrTime():
+    return str(datetime.now())
+
+
+def log (header, logFile, msg):
+    logFile = open(logFile,"a")
+    print("["+header+"] ["+getCurrTime()+"]"+msg+"\n")
+    logFile.write("["+header+"] ["+getCurrTime()+"]"+msg+"\n")
+    logFile.close()
+    return

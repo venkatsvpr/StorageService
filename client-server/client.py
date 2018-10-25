@@ -67,6 +67,9 @@ def validateInput (x,y,r):
     """
     return True
 
+def logClient (msg):
+    return log("ClientLog", ClientLogFile, msg)
+
 def main ():
     """ Temporarily Cache the path corresponding to (x,y,r), Objective is to cache the file in client side """
     """ 
@@ -77,13 +80,18 @@ def main ():
     """
     Cache = dict()
     while (True):
-        (x,y,r) = input(" Enter x,y,r in the same order and format. >> ")
+        try:
+            (x,y,r) = input(" Enter x,y,r :>> ")
+        except:
+            print (" Exiting! ")
+            break;
+        logClient(" Send request! pt:",x,y," radius, ",r)
         if (validateInput(x,y,r)):
             if ((x,y,r)  not in Cache):
                 Cache[(x,y,r)] = sendRequestToServer(ServerIp, ServerPort, [[x,y,r]])
+                logClient(" Obtained reply! pt:"+str(x)+","+str(y)+" radius, "+str(r))
             else:
-                print ("File Locally Cached, Bringing it back!! ")
+                logClient(" Fetch from Local Cache! pt:"+str(x)+","+str(y)+" radius, "+str(r))
             pathToPointCloudFile  = Cache[(x,y,r)]
-            print (" will be triggering on ",pathToPointCloudFile)
-
+            print (" path: "+pathToPointCloudFile)
 main()
