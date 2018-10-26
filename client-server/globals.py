@@ -10,7 +10,7 @@ from ast import literal_eval as make_tuple
 MyIp = "127.0.0.1"
 MyPort = 11111
 
-ServerIp = "127.0.0.1"
+ServerIp ="127.0.0.1"
 ServerPort = 33334
 
 """ Log File """
@@ -40,6 +40,6 @@ def getCurrTime():
 def log (header, logFile, msg):
     logFile = open(logFile,"a")
     print("["+header+"] ["+getCurrTime()+"]"+msg)
-    logFile.write(["+header+"] ["+getCurrTime()+"]"+msg+"\n")
+    logFile.write("["+header+"] ["+getCurrTime()+"]"+msg+"\n")
     logFile.close()
     return

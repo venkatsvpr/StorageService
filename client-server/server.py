@@ -40,8 +40,9 @@ def main ():
         sock.listen(1)
         # Receive data from the server and shut down
         while True:
+            logServer (" waiting to accept ..")
             connection, address = sock.accept()
-            logServer (" accepting connection conn: <"+connection+"> address: <"+address+">\n");
+            logServer (" accepting connection conn: <"+str(connection)+"> address: <"+str(address)+">\n");
             # Read a set of points from the client
             buffer = connection.recv(sizeof(Length))
             lengthToRead = Length.from_buffer_copy(buffer)
