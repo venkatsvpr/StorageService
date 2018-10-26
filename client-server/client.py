@@ -18,43 +18,45 @@ def sendRequestToServer (ip, port, listOfCoordinates):
     Expect a File size from Server and then create a file on client and get the contents from Server stream.
     Once done, return the file.
     """
-    serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serverAddress = (ip, port)
-    print ("Connnecting to server socket")
-    serverSock.connect(serverAddress)
+    try:
+        serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        serverAddress = (ip, port)
+        serverSock.connect(serverAddress)
 
 
-    numberOfCoordinates = len(listOfCoordinates)
-    if (numberOfCoordinates <= 0):
-        return None
+        numberOfCoordinates = len(listOfCoordinates)
+        if (numberOfCoordinates <= 0):
+            return None
 
-    payload_out = Length(numberOfCoordinates)
-    nsent = 0
-    nsent += serverSock.send(payload_out)
-    print (listOfCoordinates)
-    for item in listOfCoordinates:
-        payload_out = Payload(item[0], item[1], item[2])
+        payload_out = Length(numberOfCoordinates)
+        nsent = 0
         nsent += serverSock.send(payload_out)
+        print (listOfCoordinates)
+        for item in listOfCoordinates:
+            payload_out = Payload(item[0], item[1], item[2])
+            nsent += serverSock.send(payload_out)
 
-    buffer = serverSock.recv(sizeof(Length))
-    lengthToRead = Length.from_buffer_copy(buffer)
-    toRead = lengthToRead.len
+        buffer = serverSock.recv(sizeof(Length))
+        lengthToRead = Length.from_buffer_copy(buffer)
+        toRead = lengthToRead.len
 
-    # the file path should be in some format
-    # TODO
-    outFile = open("/tmp/1", "wb")
-    data = None
-    while (True):
+        # the file path should be in some format
+        # TODO
+        outFile = open("/tmp/1", "wb")
         data = None
-        if (toRead < 1024):
-            data = serverSock.recv(toRead)
-        else:
-            data = serverSock.recv(1024)
-        if (data == None) or (len(data) == 0):
-            break
-        outFile.write(data)
-    outFile.close()
-    return "/tmp/1"
+        while (True):
+            data = None
+            if (toRead < 1024):
+                data = serverSock.recv(toRead)
+            else:
+                data = serverSock.recv(1024)
+            if (data == None) or (len(data) == 0):
+                break
+            outFile.write(data)
+        outFile.close()
+        return "/tmp/1"
+    except:
+        return None
 
 def validateInput (x,y,r):
     """
@@ -85,13 +87,19 @@ def main ():
         except:
             print (" Exiting! ")
             break;
-        logClient(" Send request! pt:",x,y," radius, ",r)
+        logClient(" Send request! pt: x="+str(x)+" y="+str(y)+" radius="+str(r))
         if (validateInput(x,y,r)):
             if ((x,y,r)  not in Cache):
-                Cache[(x,y,r)] = sendRequestToServer(ServerIp, ServerPort, [[x,y,r]])
-                logClient(" Obtained reply! pt:"+str(x)+","+str(y)+" radius, "+str(r))
+                result = sendRequestToServer(ServerIp, ServerPort, [[x,y,r]])
+                if (result):
+                    print ("result",result)
+                    logClient(" Obtained reply! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r))
+                    Cache[(x,y,r)] = result
+                else:
+                    logClient(" Connection Failed! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r))
+                    continue;
             else:
-                logClient(" Fetch from Local Cache! pt:"+str(x)+","+str(y)+" radius, "+str(r))
+                logClient(" Fetch from Local Cache! pt: x="+str(x)+" y="+str(y)+" radius="+str(r))
             pathToPointCloudFile  = Cache[(x,y,r)]
             print (" path: "+pathToPointCloudFile)
 main()

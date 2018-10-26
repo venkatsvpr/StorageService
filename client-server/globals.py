@@ -39,7 +39,7 @@ def getCurrTime():
 
 def log (header, logFile, msg):
     logFile = open(logFile,"a")
-    print("["+header+"] ["+getCurrTime()+"]"+msg+"\n")
-    logFile.write("["+header+"] ["+getCurrTime()+"]"+msg+"\n")
+    print("["+header+"] ["+getCurrTime()+"]"+msg)
+    logFile.write(["+header+"] ["+getCurrTime()+"]"+msg+"\n")
     logFile.close()
     return
