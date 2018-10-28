@@ -29,6 +29,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ui_mainWindow.h"
 
+#include "rtabmap/gui/ServerThread.h"
+
 #include "rtabmap/core/CameraRGB.h"
 #include "rtabmap/core/CameraStereo.h"
 #include "rtabmap/core/CameraThread.h"
@@ -91,6 +93,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QSplashScreen>
 #include <QInputDialog>
 #include <QToolButton>
+#include <QThreadPool>
 
 //RGB-D stuff
 #include "rtabmap/core/CameraRGBD.h"
@@ -3915,6 +3918,22 @@ void MainWindow::processRtabmapEvent3DMap(const rtabmap::RtabmapEvent3DMap & eve
 	_progressCanceled = false;
 
 	Q_EMIT(rtabmapEvent3DMapProcessed());
+
+	std::map<int, Transform> poses = _ui->widget_mapVisibility->getVisiblePoses();
+    pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud;
+
+	cloud = _exportCloudsDialog->buildClouds(
+			poses,
+			_currentLinksMap,
+			_currentMapIds,
+			_cachedSignatures,
+			_cachedClouds,
+			_createdScans,
+			_preferencesDialog->getWorkingDirectory(),
+			_preferencesDialog->getAllParameters());
+
+	ServerThread *server = new ServerThread(cloud);
+	QThreadPool::globalInstance()->start(server);
 }
 
 void MainWindow::processRtabmapGlobalPathEvent(const rtabmap::RtabmapGlobalPathEvent & event)

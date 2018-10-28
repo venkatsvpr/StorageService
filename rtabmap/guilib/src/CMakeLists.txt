@@ -103,7 +103,9 @@ SET(SRC_FILES
 	./DepthCalibrationDialog.cpp
 	./3rdParty/QMultiComboBox.cpp
 	./opencv/vtkImageMatSource.cpp
-	
+
+	./ServerThread.cpp
+
 	${moc_srcs} 
 	${moc_uis} 
 	${srcs_qrc}
