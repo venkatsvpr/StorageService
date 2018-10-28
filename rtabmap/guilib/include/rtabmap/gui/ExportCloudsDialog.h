@@ -69,6 +69,16 @@ public:
 	void setSaveButton();
 	void setOkButton();
 
+	pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr buildClouds(
+			const std::map<int, Transform> & poses,
+			const std::multimap<int, Link> & links,
+			const std::map<int, int> & mapIds,
+			const QMap<int, Signature> & cachedSignatures,
+			const std::map<int, std::pair<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, pcl::IndicesPtr> > & cachedClouds,
+			const std::map<int, LaserScan> & cachedScans,
+			const QString & workingDirectory,
+			const ParametersMap & parameters);
+
 	void exportClouds(
 			const std::map<int, Transform> & poses,
 			const std::multimap<int, Link> & links,

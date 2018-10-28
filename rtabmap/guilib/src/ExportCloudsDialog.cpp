@@ -864,6 +864,42 @@ void ExportCloudsDialog::setOkButton()
 	updateReconstructionFlavor();
 }
 
+pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr ExportCloudsDialog::buildClouds(
+		const std::map<int, Transform> & poses,
+		const std::multimap<int, Link> & links,
+		const std::map<int, int> & mapIds,
+		const QMap<int, Signature> & cachedSignatures,
+		const std::map<int, std::pair<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, pcl::IndicesPtr> > & cachedClouds,
+		const std::map<int, LaserScan> & cachedScans,
+		const QString & workingDirectory,
+		const ParametersMap & parameters)
+{
+	std::map<int, pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr> clouds;
+	std::map<int, pcl::PolygonMesh::Ptr> meshes;
+	std::map<int, pcl::TextureMesh::Ptr> textureMeshes;
+	std::vector<std::map<int, pcl::PointXY> > textureVertexToPixels;
+
+	setSaveButton();
+
+	getExportedClouds(
+		poses,
+		links,
+		mapIds,
+		cachedSignatures,
+		cachedClouds,
+		cachedScans,
+		workingDirectory,
+		parameters,
+		clouds,
+		meshes,
+		textureMeshes,
+		textureVertexToPixels);
+
+	_progressDialog->setValue(_progressDialog->maximumSteps());
+
+	return clouds.begin()->second;
+}
+
 void ExportCloudsDialog::exportClouds(
 		const std::map<int, Transform> & poses,
 		const std::multimap<int, Link> & links,
@@ -2912,11 +2948,6 @@ std::map<int, std::pair<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr, pcl::Indic
 			pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
 			pcl::IndicesPtr indices(new std::vector<int>);
 			Transform localTransform = Transform::getIdentity();
-
-			if (!iter->second.isInRange()) {
-			    ULOGGER_ERROR("Found a node in range");
-			    continue;
-			}
 
 			if(_ui->checkBox_regenerate->isChecked())
 			{
