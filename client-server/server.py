@@ -52,11 +52,13 @@ def main ():
                 buffer = connection.recv(sizeof(Payload))
                 coord = Payload.from_buffer_copy(buffer)
                 Points.append(coord)
+                logServer(" processing point "+str(coord.x)+" "+str(coord.y)+" "+str(coord.r))
             # process export with RTabMap and generate the ply file
             """ do some function call here """
+            serverFilePath = "/tmp/server/"+str(Points[0].x)+"_"+str(Points[0].y)+"_"+str(Points[0].r)+".ply"
             filePath ="/tmp/2"
-            sendFileSizeOnConnection (filePath,connection)
-            sendFileOnConnction (filePath, connection)
+            sendFileSizeOnConnection (serverFilePath,connection)
+            sendFileOnConnction (serverFilePath, connection)
             logServer (" done with servicing. Closing the connection. \n")
             connection.close()
 main()

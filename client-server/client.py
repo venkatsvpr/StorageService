@@ -31,8 +31,10 @@ def sendRequestToServer (ip, port, listOfCoordinates):
         payload_out = Length(numberOfCoordinates)
         nsent = 0
         nsent += serverSock.send(payload_out)
-        print (listOfCoordinates)
+
+        outFile = ""
         for item in listOfCoordinates:
+            outFile = str(item[0])+"_"+str(item[1])+"_"+str(item[2])+".ply"
             payload_out = Payload(item[0], item[1], item[2])
             nsent += serverSock.send(payload_out)
 
@@ -42,7 +44,8 @@ def sendRequestToServer (ip, port, listOfCoordinates):
 
         # the file path should be in some format
         # TODO
-        outFile = open("/tmp/1", "wb")
+        outFilePath = "/tmp/client"+outFile
+        outFd = open(outFilePath, "wb")
         data = None
         while (True):
             data = None
@@ -52,9 +55,9 @@ def sendRequestToServer (ip, port, listOfCoordinates):
                 data = serverSock.recv(1024)
             if (data == None) or (len(data) == 0):
                 break
-            outFile.write(data)
-        outFile.close()
-        return "/tmp/1"
+            outFd.write(data)
+        outFd.close()
+        return outFilePath
     except:
         return None
 
@@ -69,6 +72,33 @@ def validateInput (x,y,r):
     """
     return True
 
+
+def startorUpdateDisplay(x,y,r,pathToPlyFile):
+    """
+    :param x:
+    :param y:
+    :param r:
+    :param pathToPlyFile:
+    :return:
+    We have to handle the case where the x,y,r is already present on the viewer
+    we may have to replace it or skip duplicate updates.
+    """
+    global plyViewerStarted
+    global CurrentSession
+
+    if (False == plyViewerStarted):
+        plyViewerStarted = True
+        args = ["displaz" , "-label", str(CurrentSession), str(pathToPlyFile)]
+    else:
+        args = ["displaz" , "-label", str(CurrentSession), "-add", str(pathToPlyFile)]
+    p = subprocess.Popen(args)
+    return
+
+def killDisplaySession (sessionNumber):
+    args = ["displaz", "-label", str(sessionNumber),"-quit"]
+    p = subprocess.Popen(args)
+    return
+
 def logClient (msg):
     return log("ClientLog", ClientLogFile, msg)
 
@@ -80,19 +110,21 @@ def main ():
         2,2 to 4,4 we could pull 1,1 to 5,5 in constant time rather than fetching 
     2)  (1) is at the cost of more memory on client.. we could offload this work to server
     """
+    global CurrentSession
     Cache = dict()
     while (True):
         try:
             (x,y,r) = input(" Enter x,y,r :>> ")
         except:
             print (" Exiting! ")
+            killDisplaySession(CurrentSession)
             break;
+
         logClient(" Send request! pt: x="+str(x)+" y="+str(y)+" radius="+str(r))
         if (validateInput(x,y,r)):
             if ((x,y,r)  not in Cache):
                 result = sendRequestToServer(ServerIp, ServerPort, [[x,y,r]])
                 if (result):
-                    print ("result",result)
                     logClient(" Obtained reply! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r))
                     Cache[(x,y,r)] = result
                 else:
@@ -101,5 +133,5 @@ def main ():
             else:
                 logClient(" Fetch from Local Cache! pt: x="+str(x)+" y="+str(y)+" radius="+str(r))
             pathToPointCloudFile  = Cache[(x,y,r)]
-            print (" path: "+pathToPointCloudFile)
+            startorUpdateDisplay (x,y,r,pathToPointCloudFile)
 main()
