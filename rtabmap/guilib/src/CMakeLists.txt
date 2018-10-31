@@ -32,6 +32,7 @@ SET(headers_ui
 	../include/${PROJECT_PREFIX}/gui/TexturingState.h
 	../include/${PROJECT_PREFIX}/gui/RecoveryState.h
 	../include/${PROJECT_PREFIX}/gui/EditDepthArea.h
+	../include/${PROJECT_PREFIX}/gui/PCLServer.h
 )
 
 SET(uis
@@ -104,7 +105,8 @@ SET(SRC_FILES
 	./3rdParty/QMultiComboBox.cpp
 	./opencv/vtkImageMatSource.cpp
 
-	./ServerThread.cpp
+	./PCLServer.cpp
+	./PCLUtils.cpp
 
 	${moc_srcs} 
 	${moc_uis} 
@@ -189,9 +191,9 @@ ADD_LIBRARY(rtabmap_gui ${SRC_FILES})
 TARGET_LINK_LIBRARIES(rtabmap_gui rtabmap_core rtabmap_utilite ${LIBRARIES})
 IF(Qt5_FOUND)
     IF(Qt5Svg_FOUND)
-        QT5_USE_MODULES(rtabmap_gui Widgets Core Gui Svg PrintSupport)
+        QT5_USE_MODULES(rtabmap_gui Widgets Core Gui Svg PrintSupport Network)
     ELSE()
-        QT5_USE_MODULES(rtabmap_gui Widgets Core Gui PrintSupport)
+        QT5_USE_MODULES(rtabmap_gui Widgets Core Gui PrintSupport Network)
     ENDIF()
 ENDIF(Qt5_FOUND)
 

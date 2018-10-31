@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ui_mainWindow.h"
 
-#include "rtabmap/gui/ServerThread.h"
+#include "rtabmap/gui/PCLServer.h"
 
 #include "rtabmap/core/CameraRGB.h"
 #include "rtabmap/core/CameraStereo.h"
@@ -3932,8 +3932,9 @@ void MainWindow::processRtabmapEvent3DMap(const rtabmap::RtabmapEvent3DMap & eve
 			_preferencesDialog->getWorkingDirectory(),
 			_preferencesDialog->getAllParameters());
 
-	ServerThread *server = new ServerThread(cloud);
-	QThreadPool::globalInstance()->start(server);
+	PCLServer *server = new PCLServer(cloud);
+	server->runServer();
+
 }
 
 void MainWindow::processRtabmapGlobalPathEvent(const rtabmap::RtabmapGlobalPathEvent & event)
