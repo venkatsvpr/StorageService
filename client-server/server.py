@@ -11,23 +11,18 @@ def validateInput (x,y,r):
     """
     return True
 
-def getSize(filename):
-    st = os.stat(filename)
-    return st.st_size
-
 def sendFileSizeOnConnection (filePath, connection):
-    file = open(filePath, "rb")
     size = getSize(filePath)
-    payload_out = Length(size)
-    nsent = connection.send(payload_out)
-    file.close()
+    connection.sendall(struct.pack('!i', size))
 
-def sendFileOnConnction (filePath, connection):
+def sendFileOnConnection (filePath, connection):
+    print ("Sending file to client")
     file = open(filePath,'rb')
     data = file.read(1024)
     while (data):
        connection.send(data)
        data = file.read(1024)
+    print ("sent")
     file.close()
 
 def logServer (msg):
@@ -42,23 +37,17 @@ def main ():
         while True:
             logServer (" waiting to accept ..")
             connection, address = sock.accept()
+
             logServer (" accepting connection conn: <"+str(connection)+"> address: <"+str(address)+">\n");
-            # Read a set of points from the client
-            buffer = connection.recv(sizeof(Length))
-            lengthToRead = Length.from_buffer_copy(buffer)
-            toRead = lengthToRead.len
-            Points = []
-            for i in range(int(toRead)):
-                buffer = connection.recv(sizeof(Payload))
-                coord = Payload.from_buffer_copy(buffer)
-                Points.append(coord)
-                logServer(" processing point "+str(coord.x)+" "+str(coord.y)+" "+str(coord.r))
-            # process export with RTabMap and generate the ply file
-            """ do some function call here """
-            serverFilePath = "/tmp/server/"+str(Points[0].x)+"_"+str(Points[0].y)+"_"+str(Points[0].r)+".ply"
-            filePath ="/tmp/2"
+
+            #toRead = readIntegerFromNetwork (connection)
+            coord = readCoOrdinatesFromNetwork(connection)
+            #serverFilePath = "/tmp/server/"+str(coord.x)+"_"+str(coord.y)+"_"+str(coord.r)+".ply"
+            serverFilePath= "/tmp/server/0_0_5.ply"
+            logServer(" processing point "+str(coord.x)+" "+str(coord.y)+" "+str(coord.r))
+
             sendFileSizeOnConnection (serverFilePath,connection)
-            sendFileOnConnction (serverFilePath, connection)
+            sendFileOnConnection (serverFilePath, connection)
             logServer (" done with servicing. Closing the connection. \n")
             connection.close()
-main()
+main()  

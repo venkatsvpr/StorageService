@@ -2,11 +2,14 @@ from ctypes import *
 import os
 import sys
 import socket
+import time
+import struct
 from ctypes import *
 from datetime import datetime
 from ast import literal_eval as make_tuple
 import shlex, subprocess
-
+import threading
+import Queue as Queue
 """ Global Variables """
 MyIp = "127.0.0.1"
 MyPort = 11111
@@ -45,3 +48,26 @@ def log (header, logFile, msg):
     logFile.write("["+header+"] ["+getCurrTime()+"]"+msg+"\n")
     logFile.close()
     return
+
+def readIntegerFromNetwork (connection):
+    readData = None
+    readData = connection.recv(4)
+    if (len(readData) == 0):
+        return 0
+    toRead = struct.unpack('!i', readData)[0]
+    return toRead
+
+def readCoOrdinatesFromNetwork (connection):
+    readData = None
+    readData = connection.recv(12)
+    if (len(readData) == 0):
+        return None
+    x = struct.unpack('!f f f', readData)[0]
+    y = struct.unpack('!f f f', readData)[1]
+    r = struct.unpack('!f f f', readData)[2]
+    coord = Coordinates(x,y,r)
+    return coord
+
+def getSize(filename):
+    st = os.stat(filename)
+    return st.st_size
