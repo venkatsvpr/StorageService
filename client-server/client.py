@@ -33,8 +33,9 @@ def sendRequestToServer (ip, port, listOfCoordinates):
             x = item[0]
             y = item[1]
             r = item[2]
+            print (" going to request ",x,y,r)
             outFilePath = "/tmp/client/"+str(x)+"_"+str(y)+"_"+str(r)+".ply"
-            serverSock.sendall(struct.pack('!f f f', x, y, r))
+            serverSock.sendall(struct.pack('!d d d', x, y, r))
 
             toReadSize = readIntegerFromNetwork(serverSock)
             binaryData = b''
@@ -96,32 +97,32 @@ def logClient (msg):
     return log("ClientLog", ClientLogFile, msg)
 
 def asyncGet(x, y, r, cache, cacheLock):
-        #sock.sendall(struct.pack('!i', numberOfCoordinates))
-        logClient (" Opportunistic fetching x,y,r "+str(x)+","+str(y)+","+str(r))
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        serverAddress = (ServerIp, ServerPort)
-        sock.connect(serverAddress)
+    #sock.sendall(struct.pack('!i', numberOfCoordinates))
+    logClient (" Opportunistic fetching x,y,r "+str(x)+","+str(y)+","+str(r))
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serverAddress = (ServerIp, ServerPort)
+    sock.connect(serverAddress)
 
-        outFilePath = "/tmp/client/" + str(x) + "_" + str(y) + "_" + str(r) + ".ply"
-        sock.sendall(struct.pack('!f f f', x, y, r))
+    outFilePath = "/tmp/client/" + str(x) + "_" + str(y) + "_" + str(r) + ".ply"
+    sock.sendall(struct.pack('!f f f', x, y, r))
 
-        toReadSize = readIntegerFromNetwork(sock)
-        binaryData = b''
+    toReadSize = readIntegerFromNetwork(sock)
+    binaryData = b''
 
-        while (toReadSize):
-            packet = sock.recv(toReadSize)
-            if not packet:
-                break
-            toReadSize -= len(packet)
-            binaryData += packet
-        myfile = open(outFilePath, "wb")
-        myfile.write(binaryData)
-        myfile.close()
-        sock.close()
+    while (toReadSize):
+        packet = sock.recv(toReadSize)
+        if not packet:
+            break
+        toReadSize -= len(packet)
+        binaryData += packet
+    myfile = open(outFilePath, "wb")
+    myfile.write(binaryData)
+    myfile.close()
+    sock.close()
 
-        cacheLock.acquire()
-        cache[(x,y,r)] = outFilePath
-        cacheLock.release()
+    cacheLock.acquire()
+    cache[(x,y,r)] = outFilePath
+    cacheLock.release()
 
 
 def fetchAround (x, y, r, cache, cacheLock):
@@ -141,45 +142,55 @@ def cachingService (cache, cacheLock, queue):
 def main (Cache, CacheLock, messageQueue):
     global CurrentSession
     while (True):
-        try:
-            (x,y,r) = input(" Ent"
-                            "er x,y,r :>> ")
-        except:
-            print (" Exiting! ")
-            killDisplaySession(CurrentSession)
-            break;
-
-        #logClient(" Send request! pt: x="+str(x)+" y="+str(y)+" radius="+str(r))
-        if (validateInput(x,y,r)):
-            # Replace this by  some sort of closeness logic
-            if ((x,y,r)  not in Cache):
-                messageQueue.put((float(x),float(y),float(r)))
-                st = time.time()
-                result = sendRequestToServer(ServerIp, ServerPort, [[x,y,r]])
-                if (result):
-                    print (" Co-ordinate : x = %f y = %f radius = %f" %(x,y,r))
-                    print (" Size        : %s bytes" %(getSize(result)))
-                    print (" Timetaken   : %f seconds " %(time.time()- st))
-                    #logClient(" Obtained reply! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r) + " time: "+str(time.time()-st)+" seconds")
-                    Cache[(x,y,r)] = result
+        #try:
+        #    (x,y,r) = input(" Ent"
+        #                    "er x,y,r :>> ")
+        #except:
+        #    print (" Exiting! ")
+        #    killDisplaySession(CurrentSession)
+        #    break;
+        log = open("./vlog","wa+")
+        with open("./points", "r") as fp:
+            print (' reading lines ')
+            lines = fp.readlines()
+        for line in lines:
+            lt = line.split()
+            x = float(lt[0])
+            y = float(lt[1])
+            r = 5.0
+            #logClient(" Send request! pt: x="+str(x)+" y="+str(y)+" radius="+str(r))
+            if (validateInput(x,y,r)):
+                # Replace this by  some sort of closeness logic
+                if ((x,y,r)  not in Cache):
+                    messageQueue.put((float(x),float(y),float(r)))
+                    st = time.time()
+                    result = sendRequestToServer(ServerIp, ServerPort, [[x,y,r]])
+                    if (result):
+                        log.write(str(x)+" "+str(y)+" "+str(r)+" "+str(time.time()- st)+" "+str(getSize(result))+"\n")
+                        print (" Co-ordinate : x = %f y = %f radius = %f" %(x,y,r))
+                        print (" Size        : %s bytes" %(getSize(result)))
+                        print (" Timetaken   : %f seconds " %(time.time()- st))
+                        #logClient(" Obtained reply! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r) + " time: "+str(time.time()-st)+" seconds")
+                        Cache[(x,y,r)] = result
+                    else:
+                        #logClient(" Connection Failed! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r))
+                        continue;
                 else:
-                    #logClient(" Connection Failed! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r))
-                    continue;
-            else:
-                logClient(" Fetching from from Local Cache!")
-            pathToPointCloudFile  = Cache[(x,y,r)]
-            startorUpdateDisplay (x,y,r,pathToPointCloudFile)
-
+                    logClient(" Fetching from from Local Cache!")
+                    log.write(str(x) + " " + str(y) + " " + str(r) + "  0 " + str(Cache[(x,y,r)])+"\n")
+                pathToPointCloudFile  = Cache[(x,y,r)]
+                startorUpdateDisplay (x,y,r,pathToPointCloudFile)
+        break;
 Cache = dict()
 CacheLock = threading.Lock()
 messageQueue = Queue.Queue()
 
 # Start the caching thread
-cacheThread = threading.Thread(target=cachingService,args=(Cache, CacheLock, messageQueue))
-cacheThread.start()
+#cacheThread = threading.Thread(target=cachingService,args=(Cache, CacheLock, messageQueue))
+#cacheThread.start()
 
 # Start the Main Thread
 main(Cache, CacheLock, messageQueue)
-cacheThread.exit = True
-messageQueue.put(float(-1),float(-1),float(-1))
-cacheThread.join()
+#cacheThread.exit = True
+#messageQueue.put(float(-1),float(-1),float(-1))
+#cacheThread.join()

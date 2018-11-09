@@ -15,7 +15,7 @@ MyIp = "127.0.0.1"
 MyPort = 11111
 
 ServerIp ="127.0.0.1"
-ServerPort = 33334
+ServerPort = 8001
 
 CurrentSession = 1
 """ Log File """
