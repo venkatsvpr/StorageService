@@ -10,6 +10,7 @@ from ast import literal_eval as make_tuple
 import shlex, subprocess
 import threading
 import Queue as Queue
+import math
 """ Global Variables """
 MyIp = "127.0.0.1"
 MyPort = 11111
@@ -62,9 +63,9 @@ def readCoOrdinatesFromNetwork (connection):
     readData = connection.recv(12)
     if (len(readData) == 0):
         return None
-    x = struct.unpack('!f f f', readData)[0]
-    y = struct.unpack('!f f f', readData)[1]
-    r = struct.unpack('!f f f', readData)[2]
+    x = struct.unpack('!d d d', readData)[0]
+    y = struct.unpack('!d d d', readData)[1]
+    r = struct.unpack('!d d d', readData)[2]
     coord = Coordinates(x,y,r)
     return coord
 

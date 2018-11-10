@@ -104,7 +104,7 @@ def asyncGet(x, y, r, cache, cacheLock):
     sock.connect(serverAddress)
 
     outFilePath = "/tmp/client/" + str(x) + "_" + str(y) + "_" + str(r) + ".ply"
-    sock.sendall(struct.pack('!f f f', x, y, r))
+    sock.sendall(struct.pack('!d d d', x, y, r))
 
     toReadSize = readIntegerFromNetwork(sock)
     binaryData = b''
@@ -128,6 +128,8 @@ def asyncGet(x, y, r, cache, cacheLock):
 def fetchAround (x, y, r, cache, cacheLock):
     firstLevel = [(x+r,y), (x-r,y) , (x,y+r), (x,y-r)]
     for (x1,y1) in firstLevel:
+        if (canSupressRequest(cache, x1, y1, r)):
+            continue;
         asyncGet(x1, y1, r, cache, cacheLock)
 
 def cachingService (cache, cacheLock, queue):
@@ -139,12 +141,26 @@ def cachingService (cache, cacheLock, queue):
         print (" Started Caching Service ",x,y,r)
         fetchAround(x,y,r,cache,cacheLock)
 
+def canSupressRequest (Cache, x, y, r):
+    pq = Queue.PriorityQueue()
+    for (x1,y1,r1) in Cache:
+        dist = math.sqrt((x-x1)**2 + (y-y1)**2)
+        pq.put((dist, (x,y,r)))
+    if (0 == pq.qsize()):
+        print (" return false",x,y,r)
+        return False
+    (dist, tup) = pq.get()
+    if (dist < 1+(r/2)):
+        print (" returning true",x,y,r)
+        return True
+    print (" returning false ",x,y,r)
+    return False
+
 def main (Cache, CacheLock, messageQueue):
     global CurrentSession
-    while (True):
+    if (True):
         #try:
-        #    (x,y,r) = input(" Ent"
-        #                    "er x,y,r :>> ")
+        #    (x,y,r) = input(" Enter x,y,r :>> ")
         #except:
         #    print (" Exiting! ")
         #    killDisplaySession(CurrentSession)
@@ -158,10 +174,12 @@ def main (Cache, CacheLock, messageQueue):
             x = float(lt[0])
             y = float(lt[1])
             r = 5.0
-            #logClient(" Send request! pt: x="+str(x)+" y="+str(y)+" radius="+str(r))
+            logClient(" Send request! pt: x="+str(x)+" y="+str(y)+" radius="+str(r))
             if (validateInput(x,y,r)):
                 # Replace this by  some sort of closeness logic
-                if ((x,y,r)  not in Cache):
+                canSupress = True
+                canSupress = canSupressRequest(Cache, x, y, r)
+                if (False == canSupress) and ((x,y,r)  not in Cache):
                     messageQueue.put((float(x),float(y),float(r)))
                     st = time.time()
                     result = sendRequestToServer(ServerIp, ServerPort, [[x,y,r]])
@@ -171,16 +189,18 @@ def main (Cache, CacheLock, messageQueue):
                         print (" Size        : %s bytes" %(getSize(result)))
                         print (" Timetaken   : %f seconds " %(time.time()- st))
                         #logClient(" Obtained reply! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r) + " time: "+str(time.time()-st)+" seconds")
+                        CacheLock.acquire()
                         Cache[(x,y,r)] = result
+                        CacheLock.release()
                     else:
                         #logClient(" Connection Failed! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r))
                         continue;
                 else:
                     logClient(" Fetching from from Local Cache!")
-                    log.write(str(x) + " " + str(y) + " " + str(r) + "  0 " + str(Cache[(x,y,r)])+"\n")
-                pathToPointCloudFile  = Cache[(x,y,r)]
-                startorUpdateDisplay (x,y,r,pathToPointCloudFile)
-        break;
+                    log.write(str(x) + " " + str(y) + " " + str(r) + "  0   N/a \n")
+                if (canSupress == False):
+                    pathToPointCloudFile  = Cache[(x,y,r)]
+                    startorUpdateDisplay (x,y,r,pathToPointCloudFile)
 Cache = dict()
 CacheLock = threading.Lock()
 messageQueue = Queue.Queue()
