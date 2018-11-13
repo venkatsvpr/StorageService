@@ -120,12 +120,16 @@ def asyncGet(x, y, r, cache, cacheLock):
     myfile.close()
     sock.close()
 
+
     cacheLock.acquire()
     cache[(x,y,r)] = outFilePath
     cacheLock.release()
 
+    startorUpdateDisplay(x, y, r, outFilePath)
+
 
 def fetchAround (x, y, r, cache, cacheLock):
+    print (" fetchAround  ")
     firstLevel = [(x+r,y), (x-r,y) , (x,y+r), (x,y-r)]
     for (x1,y1) in firstLevel:
         if (canSupressRequest(cache, x1, y1, r)):
@@ -133,30 +137,42 @@ def fetchAround (x, y, r, cache, cacheLock):
         asyncGet(x1, y1, r, cache, cacheLock)
 
 def cachingService (cache, cacheLock, queue):
+    print (" cachingService ")
     currThread = threading.currentThread()
     while True:
-        (x,y,r) = queue.get()
-        if (getattr(currThread, "exit", True)):
+        if (getattr(currThread, "exit", False)):
+            print (" going to break")
+            break;
+        print (" waiting on queue")
+        try:
+            (x,y,r) = queue.get(timeout= 1)
+        except:
+            continue;
+        print ("getting from queue x,y,r ",x,y,r)
+        if (r == -1):
             break;
         print (" Started Caching Service ",x,y,r)
         fetchAround(x,y,r,cache,cacheLock)
 
 def canSupressRequest (Cache, x, y, r):
     pq = Queue.PriorityQueue()
+    # Find the closest point
     for (x1,y1,r1) in Cache:
         dist = math.sqrt((x-x1)**2 + (y-y1)**2)
-        pq.put((dist, (x,y,r)))
+        pq.put((dist, (x1,y1,r1)))
     if (0 == pq.qsize()):
-        print (" return false",x,y,r)
+        print (" canSupressRequest return false",x,y,r)
         return False
     (dist, tup) = pq.get()
-    if (dist < 1+(r/2)):
-        print (" returning true",x,y,r)
+    print (" closest ",dist,tup)
+    if (dist < (r/3)):
+        print (" canSupressRequest returning true",x,y,r," dist ",dist," 1+r/2",1+r/2)
         return True
-    print (" returning false ",x,y,r)
+    print (" canSupressRequest returning false ",x,y,r)
     return False
 
 def main (Cache, CacheLock, messageQueue):
+    prevX = prevY = prevR = None
     global CurrentSession
     if (True):
         #try:
@@ -166,9 +182,9 @@ def main (Cache, CacheLock, messageQueue):
         #    killDisplaySession(CurrentSession)
         #    break;
         log = open("./vlog","wa+")
-        with open("./points", "r") as fp:
-            print (' reading lines ')
-            lines = fp.readlines()
+        fp = open("./points", "r")
+        print (' reading lines ')
+        lines = fp.readlines()
         for line in lines:
             lt = line.split()
             x = float(lt[0])
@@ -177,10 +193,10 @@ def main (Cache, CacheLock, messageQueue):
             logClient(" Send request! pt: x="+str(x)+" y="+str(y)+" radius="+str(r))
             if (validateInput(x,y,r)):
                 # Replace this by  some sort of closeness logic
-                canSupress = True
+                canSupress = False
                 canSupress = canSupressRequest(Cache, x, y, r)
+                messageQueue.put((float(x), float(y), float(r)))
                 if (False == canSupress) and ((x,y,r)  not in Cache):
-                    messageQueue.put((float(x),float(y),float(r)))
                     st = time.time()
                     result = sendRequestToServer(ServerIp, ServerPort, [[x,y,r]])
                     if (result):
@@ -193,7 +209,7 @@ def main (Cache, CacheLock, messageQueue):
                         Cache[(x,y,r)] = result
                         CacheLock.release()
                     else:
-                        #logClient(" Connection Failed! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r))
+                        #logClient(" Connection Failed! pt: x=" + str(x) + " y=" + str(y) + " rad   ius=" + str(r))
                         continue;
                 else:
                     logClient(" Fetching from from Local Cache!")
@@ -201,16 +217,19 @@ def main (Cache, CacheLock, messageQueue):
                 if (canSupress == False):
                     pathToPointCloudFile  = Cache[(x,y,r)]
                     startorUpdateDisplay (x,y,r,pathToPointCloudFile)
+            time.sleep(2)
+    #killDisplaySession(CurrentSession)
 Cache = dict()
 CacheLock = threading.Lock()
 messageQueue = Queue.Queue()
 
 # Start the caching thread
-#cacheThread = threading.Thread(target=cachingService,args=(Cache, CacheLock, messageQueue))
-#cacheThread.start()
+cacheThread = threading.Thread(target=cachingService,args=(Cache, CacheLock, messageQueue))
+cacheThread.start()
 
 # Start the Main Thread
 main(Cache, CacheLock, messageQueue)
-#cacheThread.exit = True
-#messageQueue.put(float(-1),float(-1),float(-1))
-#cacheThread.join()
+print (" out of main ..")
+cacheThread.exit = True
+messageQueue.put(-1,-1,-1)
+cacheThread.join()
