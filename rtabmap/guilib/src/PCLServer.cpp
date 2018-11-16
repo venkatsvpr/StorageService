@@ -55,13 +55,14 @@ namespace rtabmap {
         // just get it from cache and sent it over
         if (tFile.good()) {
             tFile.close();
-            UWARN ("  fILEDepends ALREADY THERE .... ");
+            UWARN (" Caching already exists on Server.. Sending the file back to client.. ");
 
             std::fstream inFile;
             inFile.open (fileName, std::ios::in | std::ios::binary	 );
             inFile.seekg(0, std::ios::end);
             unsigned int fileSize = inFile.tellg();
             inFile.seekg(0, std::ios::beg);
+
             // get the size and send it over
             ds << fileSize;
             socket.waitForBytesWritten();
@@ -70,7 +71,6 @@ namespace rtabmap {
             char* fileBuffer = new char[fileSize];
             inFile.read (fileBuffer, fileSize);
             inFile.close();
-
 
             //send file in chunks
             unsigned int bytesSent = 0;
