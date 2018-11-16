@@ -60,15 +60,22 @@ namespace rtabmap {
 
         ds << size;
         socket.waitForBytesWritten();
+        char *fileName = new char[1024];
+        sprintf(fileName,"/tmp/server/%f_%f_%f.ply",x,y,radius);
+
+        std::fstream file;
+        file.open (fileName, std::ios::out | std::ios::binary	 );
 
         char * buffer = new char[1024];
         while(!outstream.eof()) {
             outstream.read(buffer, 1024);
             int size = outstream.gcount();
+            file.write(buffer,size);
             socket.write(buffer, size);
             socket.waitForBytesWritten();
         }
 
+        file.close();
         socket.close();
         delete[] buffer;
 
