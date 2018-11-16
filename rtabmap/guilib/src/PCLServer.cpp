@@ -46,39 +46,81 @@ namespace rtabmap {
         float x, y, radius;
         ds >> x >> y >> radius;
 
-        UWARN(" > requesting x=%g, y=%g, radius=%g", x, y, radius);
 
-        pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr target = _pclutils->filterOutliers(_cloud, _kdtree, x, y, radius);
-        std::stringstream outstream(std::stringstream::in | std::stringstream::out | std::ios::binary);
-        _pclutils->pclToBinary(*target, outstream);
-
-        outstream.seekg (0, outstream.end);
-        int size = outstream.tellg();
-        outstream.seekg (0, outstream.beg);
-
-        UWARN("Sending %d bytes...", size);
-
-        ds << size;
-        socket.waitForBytesWritten();
         char *fileName = new char[1024];
         sprintf(fileName,"/tmp/server/%f_%f_%f.ply",x,y,radius);
+        std::ifstream tFile(fileName);
 
-        std::fstream file;
-        file.open (fileName, std::ios::out | std::ios::binary	 );
+        // Check if the file is there meaning we have already processed this.
+        // just get it from cache and sent it over
+        if (tFile.good()) {
+            tFile.close();
+            UWARN ("  fILEDepends ALREADY THERE .... ");
 
-        char * buffer = new char[1024];
-        while(!outstream.eof()) {
-            outstream.read(buffer, 1024);
-            int size = outstream.gcount();
-            file.write(buffer,size);
-            socket.write(buffer, size);
+            std::fstream inFile;
+            inFile.open (fileName, std::ios::in | std::ios::binary	 );
+            inFile.seekg(0, std::ios::end);
+            unsigned int fileSize = inFile.tellg();
+            inFile.seekg(0, std::ios::beg);
+            // get the size and send it over
+            ds << fileSize;
             socket.waitForBytesWritten();
+
+            //get the file in buffer
+            char* fileBuffer = new char[fileSize];
+            inFile.read (fileBuffer, fileSize);
+            inFile.close();
+
+
+            //send file in chunks
+            unsigned int bytesSent = 0;
+            int bytesToSend = 0;
+
+            // send it in multiples of 1024 bytes
+            while(bytesSent < fileSize)
+            {
+                if(fileSize - bytesSent >= 1024)
+                    bytesToSend = 1024;
+                else
+                    bytesToSend = fileSize - bytesSent;
+                socket.write(fileBuffer+bytesSent, bytesToSend);
+                socket.waitForBytesWritten();
+                bytesSent += bytesToSend;
+            }
+            delete [] fileBuffer;
+        } else {
+            // Get from the ply cache and send it over.
+            UWARN(" > requesting x=%g, y=%g, radius=%g", x, y, radius);
+
+            pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr target = _pclutils->filterOutliers(_cloud, _kdtree, x, y, radius);
+            std::stringstream outstream(std::stringstream::in | std::stringstream::out | std::ios::binary);
+            _pclutils->pclToBinary(*target, outstream);
+
+            outstream.seekg (0, outstream.end);
+            int size = outstream.tellg();
+            outstream.seekg (0, outstream.beg);
+
+            UWARN("Sending %d bytes...", size);
+
+            ds << size;
+            socket.waitForBytesWritten();
+
+            std::fstream file;
+            file.open (fileName, std::ios::out | std::ios::binary	 );
+
+            char * buffer = new char[1024];
+            while(!outstream.eof()) {
+                outstream.read(buffer, 1024);
+                int size = outstream.gcount();
+                file.write(buffer,size);
+                socket.write(buffer, size);
+                socket.waitForBytesWritten();
+            }
+
+            file.close();
+            delete[] buffer;
         }
-
-        file.close();
         socket.close();
-        delete[] buffer;
-
         UWARN("Done! Closed connection.");
     }
 
