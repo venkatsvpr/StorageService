@@ -93,3 +93,38 @@ def sendFileOnSock (sock, path):
     print ("sent")
     file.close()
     return
+
+def killDisplaySession (sessionNumber):
+    args = ["displaz", "-label", str(sessionNumber),"-quit"]
+    p = subprocess.Popen(args)
+    return
+
+def logClient (msg):
+    return log("ClientLog", ClientLogFile, msg)
+
+def writeBinaryDataToFile (binaryData, filePath):
+    myfile = open(outFilePath, "wb")
+    myfile.write(binaryData)
+    myfile.close()
+    return
+
+
+def startorUpdateDisplay(pathToPlyFile):
+    """
+    :param pathToPlyFile:
+    :return:
+    We have to handle the case where the x,y,r is already present on the viewer
+    we may have to replace it or skip duplicate updates.
+    """
+    global plyViewerStarted
+    global CurrentSession
+
+    if (False == plyViewerStarted):
+        plyViewerStarted = True
+        args = ["displaz" , "-label", str(CurrentSession), str(pathToPlyFile)]
+    else:
+        args = ["displaz" , "-label", str(CurrentSession), "-add", str(pathToPlyFile)]
+    p = subprocess.Popen(args)
+    return
+
+
