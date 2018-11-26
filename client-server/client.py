@@ -1,4 +1,4 @@
-from globals import all
+from globals import *
 
 def localizationRequest (sock, size, path):
     sendTypeOneRequest(sock, size, path)
@@ -137,6 +137,7 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
 def cachingService (cache, cacheLock, queue):
     currThread = threading.currentThread()
     while True:
+
         if (getattr(currThread, "exit", False)):
             break;
         try:
@@ -157,7 +158,6 @@ def main (Cache, CacheLock, imgQueue, pointQueue):
         except:
             print (" Exiting! ")
             killDisplaySession(CurrentSession)
-            break
         pointQueue.put((x,y,z))
 
         serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -168,11 +168,24 @@ def main (Cache, CacheLock, imgQueue, pointQueue):
         serverSock.close()
     return;
 
+def guiService (cache,imgQueue):
+    currThread = threading.currentThread()
+    while True:
+        if (getattr(currThread, "exit", False)):
+            break;
+        Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
+        filename = filedialog.askopenfilename()  # show an "Open" dialog box and return the path to the selected file
+        imgQueue.put(filename)
+    return
+
 Cache = dict()
 CacheLock = threading.Lock()
 imageQueue = Queue.Queue()
 pointQueue = Queue.Queue()
 
+# Start the gui thread
+guiThread = threading.Thread(target=guiService, args=(Cache,imageQueue))
+guiThread.start()
 
 # Start the caching thread
 cacheThread = threading.Thread(target=cachingService, args=(Cache, CacheLock, pointQueue))
@@ -180,14 +193,16 @@ cacheThread.start()
 
 # Localization Thread
 imgProcessThread = threading.Thread(target=imgProcessingService, args=(Cache, CacheLock, imageQueue, pointQueue))
-cacheThread.start()
+imgProcessThread.start()
 
 # Start the Main Thread
-main(Cache, CacheLock,imageQueue, messageQueue)
+main(Cache, CacheLock,imageQueue, pointQueue)
+
+guiThread.exit = True
+guiThread.join()
 
 cacheThread.exit = True
 cacheThread.join()
 
 imgProcessThread.exit = True
 imgProcessThread.join()
-

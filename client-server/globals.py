@@ -11,6 +11,9 @@ import shlex, subprocess
 import threading
 import Queue as Queue
 import math
+from Tkinter import Tk
+import tkFileDialog as filedialog
+
 """ Global Variables """
 MyIp = "127.0.0.1"
 MyPort = 11111
