@@ -50,6 +50,15 @@ def log (header, logFile, msg):
     logFile.close()
     return
 
+def readDoubleFromNetwork (connection):
+    readData = None
+    readData = connection.recv(4)
+    if (len(readData) == 0):
+        return 0
+    toRead = struct.unpack('!d', readData)[0]
+    return toRead
+
+
 def readIntegerFromNetwork (connection):
     readData = None
     readData = connection.recv(4)
@@ -72,3 +81,15 @@ def readCoOrdinatesFromNetwork (connection):
 def getSize(filename):
     st = os.stat(filename)
     return st.st_size
+
+
+def sendFileOnSock (sock, path):
+    print ("Sending file to client")
+    file = open(filePath,'rb')
+    data = file.read(1024)
+    while (data):
+       sock.send(data)
+       data = file.read(1024)
+    print ("sent")
+    file.close()
+    return
