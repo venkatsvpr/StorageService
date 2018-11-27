@@ -12,18 +12,19 @@ def getLocalizationResponse (sock):
     return x,y,z
 
 def sendTypeOneRequest (sock, size, path):
+    type = LocalizationMessageType
     logClient ("  Sending request type,size : "+str(type)+" "+str(size))
     sock.sendall (struct.pack('!i i',type,size))
-    sendFileOnSock(sock,path)
+    sendFileOnSock (sock,path)
     return
 
 def getPlyRequest (sock, x, y, z, r):
-    sendTypeTwoRequest(sock, x, y, z, r)
+    sendTypeTwoRequest (sock, x, y, z, r)
     return
 
 def sendTypeTwoRequest (sock, x, y, z, radius):
-    type = 2
-    logClient(" Sending request type,x,y,z,radius : "+str(type)+","+str(x)+","+str(y)+","+str(z)+","+str(radius))
+    type = CachingMessageType
+    logClient (" Sending request type,x,y,z,radius : "+str(type)+","+str(x)+","+str(y)+","+str(z)+","+str(radius))
     sock.sendall (struct.pack('!i d d d d',type, x, y, z, radius))
     return
 
@@ -41,25 +42,24 @@ def getPlyResponse (sock):
 
 def asyncGet(x, y, z, r, cache, cacheLock):
     try:
-        #sock.sendall(struct.pack('!i', numberOfCoordinates))
         logClient (" Opportunistic fetching x,y,r "+str(x)+","+str(y)+","+str(r))
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serverAddress = (ServerIp, ServerPort)
         sock.connect(serverAddress)
 
-        outFilePath = "/tmp/client/" + str(x) + "_" + str(y) + "_" + str(r) + ".ply"
+        outFilePath = getCacheFilePath (x,y,z,r)
 
         plyRequestToServer (sock, x, y, z, r)
         binaryData = getPlyResponse(sock)
-
         writeBinaryDataToFile(binaryData, outFilePath)
         sock.close()
+
+        startorUpdateDisplay(outFilePath)
 
         cacheLock.acquire()
         cache[(x,y,r)] = outFilePath
         cacheLock.release()
-
-        startorUpdateDisplay(outFilePath)
     except:
         print (" Cannot connect to server ")
     return
@@ -89,18 +89,16 @@ def syncGet (sock, x, y, z, cache, cacheLock):
     global radius
     if (True == canSupressRequest(Cache, x, y, z, radius)):
         return;
-
-    outFilePath = "/tmp/client/" + str(x) + "_" + str(y) + "_" + str(r) + ".ply"
-
+    outFilePath = getCacheFilePath (x, y, z, radius)
     plyRequestToServer(sock, x, y, z, radius)
     binaryData = PlyResponse(sock)
-
     writeBinaryDataToFile(binaryData, outFilePath)
+
+    startorUpdateDisplay(outFilePath)
 
     cacheLock.acquire()
     cache[(x,y,r)] = outFilePath
     cacheLock.release()
-    startorUpdateDisplay(outFilePath)
     return
 
 def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
@@ -108,26 +106,20 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
         serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serverAddress = (ServerIp, ServerPort)
         serverSock.connect(serverAddress)
-
         currThread = threading.currentThread()
         while True:
             if (getattr(currThread, "exit", False)):
-                break;
-            print (" Waiting for activity on imageQueue ")
+                break
             try:
-                path = imgQueue.get(timeout= 3)
+                path = imgQueue.get(timeout=2)
             except:
                 continue;
-
             fileSize = getSize(path)
             if (fileSize <= 0):
                 continue;
-
-            localizationRequest( sock, fileSize, path)
-            (x,y,z) = getLocalizationResponse(sock)
-
-            syncGet(sock, x, y, z, cache, cacheLock)
-
+            localizationRequest(serverSock, fileSize, path)
+            (x,y,z) = getLocalizationResponse(serverSock)
+            syncGet(serverSock, x, y, z, cache, cacheLock)
             pointQueue.put((float(x),float(y),float(z)))
         serverSock.close()
     except:
@@ -137,9 +129,8 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
 def cachingService (cache, cacheLock, queue):
     currThread = threading.currentThread()
     while True:
-
         if (getattr(currThread, "exit", False)):
-            break;
+            break
         try:
             print ("Waiting for activity on pointQueue")
             (x,y,r) = queue.get(timeout= 2)
@@ -156,8 +147,8 @@ def main (Cache, CacheLock, imgQueue, pointQueue):
         try:
             (x,y,z,r) = input(" Enter x,y,z,r :>> ")
         except:
-            print (" Exiting! ")
             killDisplaySession(CurrentSession)
+            return;
         pointQueue.put((x,y,z))
 
         serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -172,37 +163,38 @@ def guiService (cache,imgQueue):
     currThread = threading.currentThread()
     while True:
         if (getattr(currThread, "exit", False)):
-            break;
+            return
         Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
         filename = filedialog.askopenfilename()  # show an "Open" dialog box and return the path to the selected file
         imgQueue.put(filename)
     return
 
+# Initializing Cache and CacheLock
 Cache = dict()
 CacheLock = threading.Lock()
+
+# Initialize Queues
 imageQueue = Queue.Queue()
 pointQueue = Queue.Queue()
 
-# Start the gui thread
+# Initializing guiService
 guiThread = threading.Thread(target=guiService, args=(Cache,imageQueue))
-guiThread.start()
-
-# Start the caching thread
+# Initializing cachingService
 cacheThread = threading.Thread(target=cachingService, args=(Cache, CacheLock, pointQueue))
-cacheThread.start()
-
-# Localization Thread
+# Initializing Image-processing Service
 imgProcessThread = threading.Thread(target=imgProcessingService, args=(Cache, CacheLock, imageQueue, pointQueue))
+
+guiThread.start()
+cacheThread.start()
 imgProcessThread.start()
 
 # Start the Main Thread
 main(Cache, CacheLock,imageQueue, pointQueue)
 
+# Setting exit so that the threads may exit
 guiThread.exit = True
-guiThread.join()
-
+imgProcessThread.exit = True
 cacheThread.exit = True
 cacheThread.join()
-
-imgProcessThread.exit = True
 imgProcessThread.join()
+guiThread.join()

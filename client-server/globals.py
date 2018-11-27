@@ -22,6 +22,10 @@ ServerIp ="127.0.0.1"
 ServerPort = 8001
 
 CurrentSession = 1
+
+LocalizationMessageType = 1
+CachingMessageType = 2
+
 """ Log File """
 ClientLogFile = "/tmp/ClientLog.log"
 ServerLogFile = "/tmp/ServerLog.log"
@@ -112,7 +116,7 @@ def writeBinaryDataToFile (binaryData, filePath):
     return
 
 
-def startorUpdateDisplay(pathToPlyFile):
+def startorUpdateDisplay (pathToPlyFile):
     """
     :param pathToPlyFile:
     :return:
@@ -131,3 +135,6 @@ def startorUpdateDisplay(pathToPlyFile):
     return
 
 
+def getCacheFilePath (x, y, z, radius):
+    outFilePath = "/tmp/client/" + str(x) + "_" + str(y) + "_"  + str(z) + "_" + str(radius) + ".ply"
+    return outFilePath
