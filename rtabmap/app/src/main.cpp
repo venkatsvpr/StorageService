@@ -4,12 +4,12 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyrghti
+    * Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
     * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the Universite de Sherbrooke nor teh
+    * Neither the name of the Universite de Sherbrooke nor the
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -51,18 +51,18 @@ int main(int argc, char* argv[])
 
 	ParametersMap parameters = Parameters::parseArguments(argc, argv, false);
 	MainWindow * mainWindow = new MainWindow();
-    app->installEventFilter(mainWindow); // to catch FileOpen events.
-    
-    std::string database;
-    for(int i=1; i<argc; ++i)
-    {
-        std::string value = uReplaceChar(argv[i], '~', UDirectory::homeDir());
-        if(UFile::exists(value) &&
-           UFile::getExtension(value).compare("db") == 0)
-        {
-            database = value;
-        }
-    }
+	app->installEventFilter(mainWindow); // to catch FileOpen events.
+
+	std::string database;
+	for(int i=1; i<argc; ++i)
+	{
+		std::string value = uReplaceChar(argv[i], '~', UDirectory::homeDir());
+		if(UFile::exists(value) &&
+		   UFile::getExtension(value).compare("db") == 0)
+		{
+			database = value;
+		}
+	}
 
 	printf("Program started...\n");
 
@@ -78,22 +78,24 @@ int main(int argc, char* argv[])
 		mainWindow->show();
 	}
 
-	RtabmapThread * rtabmap = new RtabmapThread(new Rtabmap());
+	Rtabmap * rt = new Rtabmap();
+	mainWindow->setRtabMap(rt);
+	RtabmapThread * rtabmap = new RtabmapThread(rt);
 	rtabmap->start(); // start it not initialized... will be initialized by event from the gui
 	UEventsManager::addHandler(rtabmap);
-    
-    if(!database.empty())
-    {
-    	mainWindow->openDatabase(database.c_str(), parameters);
-    }
-    else if(parameters.size())
-    {
-    	mainWindow->updateParameters(parameters);
-    }
+
+	if(!database.empty())
+	{
+		mainWindow->openDatabase(database.c_str(), parameters);
+	}
+	else if(parameters.size())
+	{
+		mainWindow->updateParameters(parameters);
+	}
 
 	// Now wait for application to finish
 	app->connect( app, SIGNAL( lastWindowClosed() ),
-				app, SLOT( quit() ) );
+				  app, SLOT( quit() ) );
 	app->exec();// MUST be called by the Main Thread
 
 	/* Remove handlers */
@@ -108,5 +110,51 @@ int main(int argc, char* argv[])
 	delete app;
 	printf("All done!\n");
 
-    return 0;
+	return 0;
 }
+
+
+//int main(int argc, char * argv[])
+//{
+//
+//
+//    std::string imageDir = "/home/vikramsingh/acs/cooke_col_2";
+//    std::string configFile = "/home/vikramsingh/acs/working_config.ini";
+//    std::string databasePath = "/home/vikramsingh/Downloads/map_01.db";
+//
+//
+//    rtabmap::CameraImages camera(imageDir);
+//
+//    if(!camera.init())
+//    {
+//        printf("Camera init failed, using path \"%s\"\n", imageDir.c_str());
+//        exit(1);
+//    }
+//
+//    rtabmap::Rtabmap rtabmap;
+//    rtabmap.init(configFile, databasePath);
+//
+//    rtabmap::SensorData data1 = camera.takeImage();
+//    int nextIndex = rtabmap.getLastLocationId()+1;
+//    while(!data1.imageRaw().empty())
+//    {
+//        rtabmap.process(data1.imageRaw(), nextIndex);
+//        int localizedId = rtabmap.getLoopClosureId();
+//        if(localizedId > 0)
+//        {
+//            rtabmap::Transform const rtab_pose = rtabmap.getPose(rtabmap.getLoopClosureId());
+//            printf("xxxx %f \n",rtab_pose.x());
+//
+//            printf("localization successful. id is %d", localizedId);
+//        }
+//        else
+//        {
+//            std::cout<<"could not localize";
+//        }
+//        ++nextIndex;
+//        data1 = camera.takeImage();
+//    }
+//
+//    rtabmap.close();
+//    return 0;
+//}

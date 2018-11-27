@@ -16,13 +16,18 @@
 
 namespace rtabmap {
 
-    PCLServer::PCLServer(pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud):
+    PCLServer::PCLServer(Rtabmap * rt, pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud):
     QTcpServer(0)
     {
+        _rt = rt;
         _cloud = cloud;
         _pclutils = new PCLUtils();
         _kdtree = new pcl::KdTreeFLANN<pcl::PointXYZRGBNormal>();
         _kdtree->setInputCloud(_cloud);
+
+        // create the thread pool
+        pool = new QThreadPool(this);
+        pool->setMaxThreadCount(5);
     }
 
     void PCLServer::runServer() {
@@ -34,9 +39,16 @@ namespace rtabmap {
 
     }
 
-    void PCLServer::incomingConnection(qintptr handl) {
+    void PCLServer::incomingConnection(qintptr sd) {
+        PCLServerWorker * worker = new PCLServerWorker(_rt, _pclutils, _cloud, _kdtree, sd);
+        worker->setAutoDelete(true);
+        pool->start(worker);
+    }
+
+
+    void PCLServerWorker::run() {
         QTcpSocket socket;
-        socket.setSocketDescriptor(handl);
+        socket.setSocketDescriptor(_sd);
 
         socket.waitForReadyRead(-1);
         QDataStream ds(&socket);
@@ -45,7 +57,6 @@ namespace rtabmap {
 
         float x, y, radius;
         ds >> x >> y >> radius;
-
 
         char *fileName = new char[1024];
         sprintf(fileName,"/tmp/server/%f_%f_%f.ply",x,y,radius);
@@ -123,5 +134,4 @@ namespace rtabmap {
         socket.close();
         UWARN("Done! Closed connection.");
     }
-
 }

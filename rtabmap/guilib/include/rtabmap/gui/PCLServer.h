@@ -7,7 +7,10 @@
 
 
 #include <QTcpServer>
+#include <QRunnable>
+#include <QThreadPool>
 
+#include "rtabmap/core/Rtabmap.h"
 #include "rtabmap/gui/PCLUtils.h"
 
 #include <pcl/point_cloud.h>
@@ -24,18 +27,41 @@ namespace rtabmap {
     Q_OBJECT
 
     public:
-        PCLServer(pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr);
+        PCLServer(Rtabmap *, pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr);
 
         void runServer();
 
     private:
+        Rtabmap * _rt;
         PCLUtils * _pclutils;
         pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr _cloud;
-        pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> *_kdtree;
+        pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> * _kdtree;
+        QThreadPool * pool;
 
     protected:
         void incomingConnection(qintptr) override;
 
+    };
+
+
+    class PCLServerWorker : public QObject, public QRunnable {
+
+    Q_OBJECT
+
+    public:
+        PCLServerWorker(Rtabmap * rt, PCLUtils * pclutils, pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud,
+                        pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> * kdtree, qintptr sd):
+                        _rt(rt), _pclutils(pclutils), _cloud(cloud), _kdtree(kdtree), _sd(sd) {};
+
+    protected:
+        void run();
+
+    private:
+        Rtabmap * _rt;
+        PCLUtils * _pclutils;
+        pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr _cloud;
+        pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> *_kdtree;
+        qintptr _sd;
     };
 
 }

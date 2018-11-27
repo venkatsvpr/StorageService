@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtabmap/utilite/UEventsHandler.h"
 #include <QMainWindow>
 #include <QtCore/QSet>
+#include "rtabmap/core/Rtabmap.h"
 #include "rtabmap/core/RtabmapEvent.h"
 #include "rtabmap/core/SensorData.h"
 #include "rtabmap/core/OdometryEvent.h"
@@ -108,6 +109,8 @@ public:
 	bool isProcessingOdometry() const {return _processingOdometry;}
 
 	bool isDatabaseUpdated() const { return _databaseUpdated; }
+	void setRtabMap(Rtabmap * rt) {_rt = rt;}
+    Rtabmap * getRtabMap() {return _rt;}
 
 public Q_SLOTS:
 	virtual void processStats(const rtabmap::Statistics & stat);
@@ -295,6 +298,7 @@ protected:
 	const QString & newDatabasePathOutput() const { return _newDatabasePathOutput; }
 
 private:
+    Rtabmap * _rt;
 	Ui_mainWindow * _ui;
 
 	State _state;
