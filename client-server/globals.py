@@ -11,14 +11,9 @@ import shlex, subprocess
 import threading
 import Queue as Queue
 import math
-<<<<<<< Updated upstream
-=======
 from Tkinter import Tk
 import tkFileDialog as filedialog
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-import SocketServer
 
->>>>>>> Stashed changes
 """ Global Variables """
 MyIp = "127.0.0.1"
 MyPort = 11111
@@ -27,6 +22,10 @@ ServerIp ="127.0.0.1"
 ServerPort = 8001
 
 CurrentSession = 1
+
+LocalizationMessageType = 1
+CachingMessageType = 2
+
 """ Log File """
 ClientLogFile = "/tmp/ClientLog.log"
 ServerLogFile = "/tmp/ServerLog.log"
@@ -58,6 +57,15 @@ def log (header, logFile, msg):
     logFile.close()
     return
 
+def readDoubleFromNetwork (connection):
+    readData = None
+    readData = connection.recv(4)
+    if (len(readData) == 0):
+        return 0
+    toRead = struct.unpack('!d', readData)[0]
+    return toRead
+
+
 def readIntegerFromNetwork (connection):
     readData = None
     readData = connection.recv(4)
@@ -80,8 +88,6 @@ def readCoOrdinatesFromNetwork (connection):
 def getSize(filename):
     st = os.stat(filename)
     return st.st_size
-<<<<<<< Updated upstream
-=======
 
 
 def sendFileOnSock (sock, path):
@@ -143,4 +149,3 @@ def readByteFromSock (sock, toReadSize):
         toReadSize -= len(packet)
         binaryData += packet
     return binaryData
->>>>>>> Stashed changes
