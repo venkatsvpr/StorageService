@@ -3932,7 +3932,7 @@ void MainWindow::processRtabmapEvent3DMap(const rtabmap::RtabmapEvent3DMap & eve
 			_preferencesDialog->getWorkingDirectory(),
 			_preferencesDialog->getAllParameters());
 
-	PCLServer *server = new PCLServer(cloud);
+	PCLServer *server = new PCLServer(_rt, cloud);
 	server->runServer();
 
 }
