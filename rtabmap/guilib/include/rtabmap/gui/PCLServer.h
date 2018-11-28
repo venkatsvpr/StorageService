@@ -11,6 +11,7 @@
 #include <QThreadPool>
 
 #include "rtabmap/core/Rtabmap.h"
+#include "rtabmap/core/Memory.h"
 #include "rtabmap/gui/PCLUtils.h"
 
 #include <pcl/point_cloud.h>
@@ -19,6 +20,7 @@
 #include <pcl/filters/conditional_removal.h>
 #include <pcl/filters/radius_outlier_removal.h>
 
+#define CHUNK_SIZE 1024
 
 namespace rtabmap {
 
@@ -55,6 +57,9 @@ namespace rtabmap {
 
     protected:
         void run();
+        bool localize(float &, float &, float &, char *, int);
+        void handle_type1(QTcpSocket &, QDataStream &);
+        void handle_type2(QTcpSocket &, QDataStream &);
 
     private:
         Rtabmap * _rt;

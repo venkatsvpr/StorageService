@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 #include "rtabmap/gui/PCLServer.h"
 #include "rtabmap/utilite/ULogger.h"
@@ -47,18 +48,75 @@ namespace rtabmap {
 
 
     void PCLServerWorker::run() {
+        int connection_type;
         QTcpSocket socket;
         socket.setSocketDescriptor(_sd);
-
-        socket.waitForReadyRead(-1);
         QDataStream ds(&socket);
 
         UWARN("Accepted connection.");
 
-        float x, y, radius;
-        ds >> x >> y >> radius;
+        socket.waitForReadyRead();
+        ds >> connection_type;
+        UWARN("Connection type is %i", connection_type);
 
-        char *fileName = new char[1024];
+        switch(connection_type) {
+            case 1:
+            {
+                handle_type1(socket, ds);
+                break;
+            }
+            case 2:
+            {
+                handle_type2(socket, ds);
+                break;
+            }
+            default:
+                UWARN("Unknown connection type.");
+        }
+
+        socket.close();
+        UWARN("Done! Closed connection.");
+    }
+
+    void PCLServerWorker::handle_type1(QTcpSocket &socket, QDataStream &ds) {
+        int image_size, read = 0, bytes = 0;
+        ds >> image_size;
+        char * image_buffer = new char[image_size];
+
+        UWARN("Reading input image of size %i bytes...", image_size);
+        while(read < image_size) {
+            bytes = (int) socket.read(image_buffer + read,
+                                      (image_size-read) < CHUNK_SIZE ? (image_size-read) : CHUNK_SIZE);
+            if(bytes == 0 && !socket.waitForReadyRead()) {
+                UWARN("Connection unexpectedly closed");
+                delete[] image_buffer;
+                return;
+            }
+            read += bytes;
+        }
+
+        UWARN("Done! Performing localization...");
+        float x, y, z;
+        if (!localize(x, y, z, image_buffer, image_size)) {
+            UWARN("Unable to localize");
+            delete[] image_buffer;
+            return;
+        }
+        UWARN("Done! x=%g, y=%g, z=%g", x, y, z);
+
+        ds << 1 << x << y << z;
+        socket.waitForBytesWritten();
+
+        delete[] image_buffer;
+    }
+
+    void PCLServerWorker::handle_type2(QTcpSocket &socket, QDataStream &ds) {
+        float x, y, z, radius;
+        ds >> x >> y >> z >> radius;
+
+        UWARN("Request for x=%g, y=%g, z=%g, radius=%g", x, y, z, radius);
+
+        char *fileName = new char[CHUNK_SIZE];
         sprintf(fileName,"/tmp/server/%f_%f_%f.ply",x,y,radius);
         std::ifstream tFile(fileName);
 
@@ -66,16 +124,16 @@ namespace rtabmap {
         // just get it from cache and sent it over
         if (tFile.good()) {
             tFile.close();
-            UWARN (" Caching already exists on Server.. Sending the file back to client.. ");
+            UWARN ("Caching already exists on Server.. Sending the file back to client.. ");
 
             std::fstream inFile;
-            inFile.open (fileName, std::ios::in | std::ios::binary	 );
+            inFile.open (fileName, std::ios::in | std::ios::binary);
             inFile.seekg(0, std::ios::end);
             unsigned int fileSize = inFile.tellg();
             inFile.seekg(0, std::ios::beg);
 
             // get the size and send it over
-            ds << fileSize;
+            ds << 2 << fileSize;
             socket.waitForBytesWritten();
 
             //get the file in buffer
@@ -90,8 +148,8 @@ namespace rtabmap {
             // send it in multiples of 1024 bytes
             while(bytesSent < fileSize)
             {
-                if(fileSize - bytesSent >= 1024)
-                    bytesToSend = 1024;
+                if(fileSize - bytesSent >= CHUNK_SIZE)
+                    bytesToSend = CHUNK_SIZE;
                 else
                     bytesToSend = fileSize - bytesSent;
                 socket.write(fileBuffer+bytesSent, bytesToSend);
@@ -101,8 +159,6 @@ namespace rtabmap {
             delete [] fileBuffer;
         } else {
             // Get from the ply cache and send it over.
-            UWARN(" > requesting x=%g, y=%g, radius=%g", x, y, radius);
-
             pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr target = _pclutils->filterOutliers(_cloud, _kdtree, x, y, radius);
             std::stringstream outstream(std::stringstream::in | std::stringstream::out | std::ios::binary);
             _pclutils->pclToBinary(*target, outstream);
@@ -113,15 +169,15 @@ namespace rtabmap {
 
             UWARN("Sending %d bytes...", size);
 
-            ds << size;
+            ds << 2 << size;
             socket.waitForBytesWritten();
 
             std::fstream file;
-            file.open (fileName, std::ios::out | std::ios::binary	 );
+            file.open (fileName, std::ios::out | std::ios::binary);
 
-            char * buffer = new char[1024];
+            char * buffer = new char[CHUNK_SIZE];
             while(!outstream.eof()) {
-                outstream.read(buffer, 1024);
+                outstream.read(buffer, CHUNK_SIZE);
                 int size = outstream.gcount();
                 file.write(buffer,size);
                 socket.write(buffer, size);
@@ -131,7 +187,22 @@ namespace rtabmap {
             file.close();
             delete[] buffer;
         }
-        socket.close();
-        UWARN("Done! Closed connection.");
+    }
+
+    bool PCLServerWorker::localize(float &x, float &y, float &z, char *image_buffer, int image_size) {
+        std::vector<char> encoded_image(image_buffer, image_buffer + image_size);
+        cv::Mat image = cv::imdecode(encoded_image, cv::IMREAD_ANYCOLOR);
+
+        _rt->process(image, _rt->getLastLocationId()+1);
+        int localizedId = _rt->getLoopClosureId();
+        if(localizedId <= 0)
+            return false;
+
+        const Transform t = _rt->getMemory()->getSignature(localizedId)->getPose();
+        x = t.x();
+        y = t.y();
+        z = t.z();
+
+        return true;
     }
 }
