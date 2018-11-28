@@ -13,6 +13,8 @@ import Queue as Queue
 import math
 from Tkinter import Tk
 import tkFileDialog as filedialog
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import SocketServer
 
 """ Global Variables """
 MyIp = "127.0.0.1"

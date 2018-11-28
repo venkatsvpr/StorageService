@@ -29,7 +29,7 @@ def sendTypeTwoRequest (sock, x, y, z, radius):
     return
 
 
-def getPlyResponse (sock):
+def getPlyResponse(sock):
     type = readIntegerFromNetwork(sock)
     toReadSize = readIntegerFromNetwork(sock)
     binaryData = b''
@@ -161,12 +161,40 @@ def main (Cache, CacheLock, imgQueue, pointQueue):
 
 def guiService (cache,imgQueue):
     currThread = threading.currentThread()
+
+    class S(BaseHTTPRequestHandler):
+        def _set_headers(self):
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+
+        def do_GET(self):
+            self._set_headers()
+            self.wfile.write("<html><body><h1>hi!</h1></body></html>")
+
+        def do_HEAD(self):
+            self._set_headers()
+
+        def do_POST(self):
+            # Doesn't do anything with posted data
+            self._set_headers()
+            self.wfile.write("<html><body><h1>POST!</h1></body></html>")
+
+    server_address = ('', 8099)
+    server_class=HTTPServer
+    handler_class=S
+    httpd = server_class(server_address, handler_class)
+    print 'Starting httpd...'
+    httpd.serve_forever()
+
+    '''
     while True:
         if (getattr(currThread, "exit", False)):
             return
         Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
         filename = filedialog.askopenfilename()  # show an "Open" dialog box and return the path to the selected file
         imgQueue.put(filename)
+        '''
     return
 
 # Initializing Cache and CacheLock
