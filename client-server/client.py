@@ -106,6 +106,8 @@ def asyncGet(x, y, r, cache, cacheLock):
     outFilePath = "/tmp/client/" + str(x) + "_" + str(y) + "_" + str(r) + ".ply"
     sock.sendall(struct.pack('!d d d', x, y, r))
 
+def getPlyResponse(sock):
+    type = readIntegerFromNetwork(sock)
     toReadSize = readIntegerFromNetwork(sock)
     binaryData = b''
 
@@ -175,50 +177,60 @@ def main (Cache, CacheLock, messageQueue):
     prevX = prevY = prevR = None
     global CurrentSession
     if (True):
-        #try:
-        #    (x,y,r) = input(" Enter x,y,r :>> ")
-        #except:
-        #    print (" Exiting! ")
-        #    killDisplaySession(CurrentSession)
-        #    break;
-        log = open("./vlog","wa+")
-        fp = open("./points", "r")
-        print (' reading lines ')
-        lines = fp.readlines()
-        for line in lines:
-            lt = line.split()
-            x = float(lt[0])
-            y = float(lt[1])
-            r = 5.0
-            logClient(" Send request! pt: x="+str(x)+" y="+str(y)+" radius="+str(r))
-            if (validateInput(x,y,r)):
-                # Replace this by  some sort of closeness logic
-                canSupress = False
-                canSupress = canSupressRequest(Cache, x, y, r)
-                messageQueue.put((float(x), float(y), float(r)))
-                if (False == canSupress) and ((x,y,r)  not in Cache):
-                    st = time.time()
-                    result = sendRequestToServer(ServerIp, ServerPort, [[x,y,r]])
-                    if (result):
-                        log.write(str(x)+" "+str(y)+" "+str(r)+" "+str(time.time()- st)+" "+str(getSize(result))+"\n")
-                        print (" Co-ordinate : x = %f y = %f radius = %f" %(x,y,r))
-                        print (" Size        : %s bytes" %(getSize(result)))
-                        print (" Timetaken   : %f seconds " %(time.time()- st))
-                        #logClient(" Obtained reply! pt: x=" + str(x) + " y=" + str(y) + " radius=" + str(r) + " time: "+str(time.time()-st)+" seconds")
-                        CacheLock.acquire()
-                        Cache[(x,y,r)] = result
-                        CacheLock.release()
-                    else:
-                        #logClient(" Connection Failed! pt: x=" + str(x) + " y=" + str(y) + " rad   ius=" + str(r))
-                        continue;
-                else:
-                    logClient(" Fetching from from Local Cache!")
-                    log.write(str(x) + " " + str(y) + " " + str(r) + "  0   N/a \n")
-                if (canSupress == False):
-                    pathToPointCloudFile  = Cache[(x,y,r)]
-                    startorUpdateDisplay (x,y,r,pathToPointCloudFile)
-            time.sleep(2)
-    #killDisplaySession(CurrentSession)
+        try:
+            (x,y,z,r) = input(" Enter x,y,z,r :>> ")
+        except:
+            killDisplaySession(CurrentSession)
+            return;
+        pointQueue.put((x,y,z))
+
+        serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        serverAddress = (ServerIp, ServerPort)
+        serverSock.connect(serverAddress)
+
+        syncGet(serverSock, x,y,z, Cache, CacheLock)
+        serverSock.close()
+    return;
+
+def guiService (cache,imgQueue):
+    currThread = threading.currentThread()
+
+    class S(BaseHTTPRequestHandler):
+        def _set_headers(self):
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+
+        def do_GET(self):
+            self._set_headers()
+            self.wfile.write("<html><body><h1>hi!</h1></body></html>")
+
+        def do_HEAD(self):
+            self._set_headers()
+
+        def do_POST(self):
+            # Doesn't do anything with posted data
+            self._set_headers()
+            self.wfile.write("<html><body><h1>POST!</h1></body></html>")
+
+    server_address = ('', 8099)
+    server_class=HTTPServer
+    handler_class=S
+    httpd = server_class(server_address, handler_class)
+    print 'Starting httpd...'
+    httpd.serve_forever()
+
+    '''
+    while True:
+        if (getattr(currThread, "exit", False)):
+            return
+        Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
+        filename = filedialog.askopenfilename()  # show an "Open" dialog box and return the path to the selected file
+        imgQueue.put(filename)
+        '''
+    return
+
+# Initializing Cache and CacheLock
 Cache = dict()
 CacheLock = threading.Lock()
 messageQueue = Queue.Queue()

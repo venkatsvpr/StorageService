@@ -11,6 +11,14 @@ import shlex, subprocess
 import threading
 import Queue as Queue
 import math
+<<<<<<< Updated upstream
+=======
+from Tkinter import Tk
+import tkFileDialog as filedialog
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import SocketServer
+
+>>>>>>> Stashed changes
 """ Global Variables """
 MyIp = "127.0.0.1"
 MyPort = 11111
@@ -72,3 +80,67 @@ def readCoOrdinatesFromNetwork (connection):
 def getSize(filename):
     st = os.stat(filename)
     return st.st_size
+<<<<<<< Updated upstream
+=======
+
+
+def sendFileOnSock (sock, path):
+    print ("Sending file to client")
+    file = open(filePath,'rb')
+    data = file.read(1024)
+    while (data):
+       sock.send(data)
+       data = file.read(1024)
+    print ("sent")
+    file.close()
+    return
+
+def killDisplaySession (sessionNumber):
+    args = ["displaz", "-label", str(sessionNumber),"-quit"]
+    p = subprocess.Popen(args)
+    return
+
+def logClient (msg):
+    return log("ClientLog", ClientLogFile, msg)
+
+def writeBinaryDataToFile (binaryData, filePath):
+    myfile = open(outFilePath, "wb")
+    myfile.write(binaryData)
+    myfile.close()
+    return
+
+
+def startorUpdateDisplay (pathToPlyFile):
+    """
+    :param pathToPlyFile:
+    :return:
+    We have to handle the case where the x,y,r is already present on the viewer
+    we may have to replace it or skip duplicate updates.
+    """
+    global plyViewerStarted
+    global CurrentSession
+
+    if (False == plyViewerStarted):
+        plyViewerStarted = True
+        args = ["displaz" , "-label", str(CurrentSession), str(pathToPlyFile)]
+    else:
+        args = ["displaz" , "-label", str(CurrentSession), "-add", str(pathToPlyFile)]
+    p = subprocess.Popen(args)
+    return
+
+
+def getCacheFilePath (x, y, z, radius):
+    outFilePath = "/tmp/client/" + str(x) + "_" + str(y) + "_"  + str(z) + "_" + str(radius) + ".ply"
+    return outFilePath
+
+
+def readByteFromSock (sock, toReadSize):
+    binaryData = b''
+    while (toReadSize):
+        packet = sock.recv(toReadSize)
+        if not packet:
+            break
+        toReadSize -= len(packet)
+        binaryData += packet
+    return binaryData
+>>>>>>> Stashed changes
