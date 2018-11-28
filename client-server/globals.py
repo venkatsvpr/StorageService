@@ -138,3 +138,14 @@ def startorUpdateDisplay (pathToPlyFile):
 def getCacheFilePath (x, y, z, radius):
     outFilePath = "/tmp/client/" + str(x) + "_" + str(y) + "_"  + str(z) + "_" + str(radius) + ".ply"
     return outFilePath
+
+
+def readByteFromSock (sock, toReadSize):
+    binaryData = b''
+    while (toReadSize):
+        packet = sock.recv(toReadSize)
+        if not packet:
+            break
+        toReadSize -= len(packet)
+        binaryData += packet
+    return binaryData

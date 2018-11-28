@@ -28,6 +28,7 @@ def sendTypeTwoRequest (sock, x, y, z, radius):
     sock.sendall (struct.pack('!i d d d d',type, x, y, z, radius))
     return
 
+
 def getPlyResponse (sock):
     type = readIntegerFromNetwork(sock)
     toReadSize = readIntegerFromNetwork(sock)
@@ -42,8 +43,7 @@ def getPlyResponse (sock):
 
 def asyncGet(x, y, z, r, cache, cacheLock):
     try:
-        logClient (" Opportunistic fetching x,y,r "+str(x)+","+str(y)+","+str(r))
-
+        logClient (" Opportunistic fetching x,y,z,r "+str(x)+","+str(y)+","+str(z)+","+str(r))
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serverAddress = (ServerIp, ServerPort)
         sock.connect(serverAddress)
