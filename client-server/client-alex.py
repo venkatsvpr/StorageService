@@ -11,35 +11,48 @@ FILE = "/Users/nox/Desktop/received.ply"  # change it to whatever you want
 
 
 def main():
-    system('displaz &')
     while True:
         try:
-            x, y, radius = list(map(float, input().split()))
+            ctype = int(input('Connection type: '))
+            if ctype not in [1, 2]:
+                raise TypeError
         except (TypeError, ValueError):
             print('Bye.')
             break
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            st = time.time()
             s.connect((HOST, PORT))
-            s.sendall(struct.pack('!d d d', x, y, radius))
-            data = s.recv(4)
-            num = struct.unpack('!i', data)[0]
+            if ctype == 1:
+                iname = int(input('image file name: '))
+                with open('../mapImages/rgb/%d.jpg' % iname, 'rb') as f:
+                    data = f.read()
+                size = len(data)
+                st = time.time()
+                s.sendall(struct.pack('!i i', ctype, size))
+                s.sendall(data)
+                a = s.recv(28)
+                num = struct.unpack('!i d d d', a)
+                print(num)
+            else:
+                system('displaz &')
+                x, y, z, r = list(map(float, input('x, y, z, r: ').split()))
+                st = time.time()
+                s.sendall(struct.pack('!i d d d d', ctype, x, y, z, r))
+                data = s.recv(8)
+                t, size = struct.unpack('!i i', data)
+                data = b''
+                while size - len(data):
+                    packet = s.recv(size)
+                    if not packet:
+                        break
+                    data += packet
+                with open(FILE, 'bw') as myfile:
+                    myfile.write(data)
+                print('Received: {0:,d} bytes'.format(len(data)))
+                system('displaz -clear %s' % FILE)
 
-            data = b''
-            while num - len(data):
-                packet = s.recv(num)
-                if not packet:
-                    break
-                data += packet
+        print('Time taken: %f seconds\n' % (time.time() - st))
 
-        with open(FILE, 'bw') as myfile:
-            myfile.write(data)
-
-        system('displaz -clear %s' % FILE)
-
-        print('Time taken: %f seconds' % (time.time() - st))
-        print('Received: {0:,d} bytes\n'.format(len(data)))
 
 
 if __name__ == '__main__':
