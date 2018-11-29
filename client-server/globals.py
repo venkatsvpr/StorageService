@@ -11,10 +11,11 @@ import shlex, subprocess
 import threading
 import Queue as Queue
 import math
-from Tkinter import Tk
-import tkFileDialog as filedialog
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
+from urlparse import parse_qs
+
+
 
 """ Global Variables """
 MyIp = "127.0.0.1"
@@ -24,10 +25,6 @@ ServerIp ="127.0.0.1"
 ServerPort = 8001
 
 CurrentSession = 1
-
-LocalizationMessageType = 1
-CachingMessageType = 2
-
 """ Log File """
 ClientLogFile = "/tmp/ClientLog.log"
 ServerLogFile = "/tmp/ServerLog.log"
@@ -58,15 +55,6 @@ def log (header, logFile, msg):
     logFile.write("["+header+"] ["+getCurrTime()+"]"+msg+"\n")
     logFile.close()
     return
-
-def readDoubleFromNetwork (connection):
-    readData = None
-    readData = connection.recv(4)
-    if (len(readData) == 0):
-        return 0
-    toRead = struct.unpack('!d', readData)[0]
-    return toRead
-
 
 def readIntegerFromNetwork (connection):
     readData = None
