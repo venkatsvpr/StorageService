@@ -11,6 +11,9 @@ import shlex, subprocess
 import threading
 import Queue as Queue
 import math
+from Tkinter import Tk
+import tkFileDialog as filedialog
+
 """ Global Variables """
 MyIp = "127.0.0.1"
 MyPort = 11111
@@ -19,6 +22,10 @@ ServerIp ="127.0.0.1"
 ServerPort = 8001
 
 CurrentSession = 1
+
+LocalizationMessageType = 1
+CachingMessageType = 2
+
 """ Log File """
 ClientLogFile = "/tmp/ClientLog.log"
 ServerLogFile = "/tmp/ServerLog.log"
@@ -50,6 +57,15 @@ def log (header, logFile, msg):
     logFile.close()
     return
 
+def readDoubleFromNetwork (connection):
+    readData = None
+    readData = connection.recv(4)
+    if (len(readData) == 0):
+        return 0
+    toRead = struct.unpack('!d', readData)[0]
+    return toRead
+
+
 def readIntegerFromNetwork (connection):
     readData = None
     readData = connection.recv(4)
@@ -72,3 +88,64 @@ def readCoOrdinatesFromNetwork (connection):
 def getSize(filename):
     st = os.stat(filename)
     return st.st_size
+
+
+def sendFileOnSock (sock, path):
+    print ("Sending file to client")
+    file = open(filePath,'rb')
+    data = file.read(1024)
+    while (data):
+       sock.send(data)
+       data = file.read(1024)
+    print ("sent")
+    file.close()
+    return
+
+def killDisplaySession (sessionNumber):
+    args = ["displaz", "-label", str(sessionNumber),"-quit"]
+    p = subprocess.Popen(args)
+    return
+
+def logClient (msg):
+    return log("ClientLog", ClientLogFile, msg)
+
+def writeBinaryDataToFile (binaryData, filePath):
+    myfile = open(outFilePath, "wb")
+    myfile.write(binaryData)
+    myfile.close()
+    return
+
+
+def startorUpdateDisplay (pathToPlyFile):
+    """
+    :param pathToPlyFile:
+    :return:
+    We have to handle the case where the x,y,r is already present on the viewer
+    we may have to replace it or skip duplicate updates.
+    """
+    global plyViewerStarted
+    global CurrentSession
+
+    if (False == plyViewerStarted):
+        plyViewerStarted = True
+        args = ["displaz" , "-label", str(CurrentSession), str(pathToPlyFile)]
+    else:
+        args = ["displaz" , "-label", str(CurrentSession), "-add", str(pathToPlyFile)]
+    p = subprocess.Popen(args)
+    return
+
+
+def getCacheFilePath (x, y, z, radius):
+    outFilePath = "/tmp/client/" + str(x) + "_" + str(y) + "_"  + str(z) + "_" + str(radius) + ".ply"
+    return outFilePath
+
+
+def readByteFromSock (sock, toReadSize):
+    binaryData = b''
+    while (toReadSize):
+        packet = sock.recv(toReadSize)
+        if not packet:
+            break
+        toReadSize -= len(packet)
+        binaryData += packet
+    return binaryData
