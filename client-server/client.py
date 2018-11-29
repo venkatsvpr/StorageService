@@ -169,8 +169,13 @@ def guiService (cache,imgQueue):
             self.end_headers()
 
         def do_GET(self):
+            print self.path
+            query_dict =  parse_qs(self.path[2:])
+            file_path = query_dict.get("url")[0]
+            print file_path
+            imgQueue.put(file_path)
             self._set_headers()
-            self.wfile.write("<html><body><h1>hi!</h1></body></html>")
+            self.wfile.write("<html><body><h1>File location has been sent</h1></body></html>")
 
         def do_HEAD(self):
             self._set_headers()
@@ -178,7 +183,7 @@ def guiService (cache,imgQueue):
         def do_POST(self):
             # Doesn't do anything with posted data
             self._set_headers()
-            self.wfile.write("<html><body><h1>POST!</h1></body></html>")
+            self.wfile.write("<html><body><h1>Post</h1></body></html>")
 
     server_address = ('', 8099)
     server_class=HTTPServer
