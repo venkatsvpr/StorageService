@@ -173,7 +173,7 @@ def main (Cache, CacheLock, imgQueue, pointQueue):
 
 def guiService (cache,imgQueue):
     currThread = threading.currentThread()
-    while True:
+    if True:
         if (getattr(currThread, "exit", False)):
             return
         Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
