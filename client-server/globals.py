@@ -30,8 +30,16 @@ CachingMessageType = 2
 ClientLogFile = "/tmp/ClientLog.log"
 ServerLogFile = "/tmp/ServerLog.log"
 
+"""  Metrics Files """
+LocalizationCsv = SyncFetchCsv = AsyncFetchCsv = localFile = syncFile = asyncFile = None
+LocalizationCsv ="/tmp/Localization.csv"
+SyncFetchCsv ="/tmp/SyncFetch.csv"
+AsyncFetchCsv ="/tmp/AsyncFetch.csv"
+
 plyViewerStarted = False
 """ Some Structures for Inter Process Communication """
+
+csvLock = None;
 class Payload(Structure):
     _fields_ = [("x", c_uint32), ("y", c_uint32), ("r", c_uint32)]
 
@@ -149,3 +157,9 @@ def readByteFromSock (sock, toReadSize):
         toReadSize -= len(packet)
         binaryData += packet
     return binaryData
+
+def writeToCSVFile (file, content):
+    csvLock.acquire()
+    file.write(getCurrTime()+","+str(content)+"\n")
+    csvLock.release()
+    return
