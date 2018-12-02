@@ -11,11 +11,10 @@ import shlex, subprocess
 import threading
 import Queue as Queue
 import math
+
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 from urlparse import parse_qs
-
-
 
 """ Global Variables """
 MyIp = "127.0.0.1"
@@ -25,12 +24,24 @@ ServerIp ="127.0.0.1"
 ServerPort = 8001
 
 CurrentSession = 1
+
+LocalizationMessageType = 1
+CachingMessageType = 2
+
 """ Log File """
 ClientLogFile = "/tmp/ClientLog.log"
 ServerLogFile = "/tmp/ServerLog.log"
 
+"""  Metrics Files """
+LocalizationCsv = SyncFetchCsv = AsyncFetchCsv = localFile = syncFile = asyncFile = None
+LocalizationCsv ="/tmp/Localization.csv"
+SyncFetchCsv ="/tmp/SyncFetch.csv"
+AsyncFetchCsv ="/tmp/AsyncFetch.csv"
+
 plyViewerStarted = False
 """ Some Structures for Inter Process Communication """
+
+csvLock = None;
 class Payload(Structure):
     _fields_ = [("x", c_uint32), ("y", c_uint32), ("r", c_uint32)]
 
@@ -55,6 +66,15 @@ def log (header, logFile, msg):
     logFile.write("["+header+"] ["+getCurrTime()+"]"+msg+"\n")
     logFile.close()
     return
+
+def readDoubleFromNetwork (connection):
+    readData = None
+    readData = connection.recv(4)
+    if (len(readData) == 0):
+        return 0
+    toRead = struct.unpack('!d', readData)[0]
+    return toRead
+
 
 def readIntegerFromNetwork (connection):
     readData = None
@@ -139,3 +159,11 @@ def readByteFromSock (sock, toReadSize):
         toReadSize -= len(packet)
         binaryData += packet
     return binaryData
+
+
+def writeToCSVFile (file, content):
+    csvLock.acquire()
+    file.write(getCurrTime()+","+str(content)+"\n")
+    csvLock.release()
+    return
+

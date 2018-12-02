@@ -28,8 +28,7 @@ def sendTypeTwoRequest (sock, x, y, z, radius):
     sock.sendall (struct.pack('!i d d d d',type, x, y, z, radius))
     return
 
-
-def getPlyResponse(sock):
+def getPlyResponse (sock):
     type = readIntegerFromNetwork(sock)
     toReadSize = readIntegerFromNetwork(sock)
     binaryData = b''
@@ -65,11 +64,15 @@ def asyncGet(x, y, z, r, cache, cacheLock):
     return
 
 def fetchAround (x, y, r, cache, cacheLock):
+    global asyncFile
     firstLevel = [(x+r,y), (x-r,y) , (x,y+r), (x,y-r)]
+    startTime = time.time()
     for (x1,y1) in firstLevel:
         if (canSupressRequest(cache, x1, y1, r)):
             continue;
         asyncGet(x1, y1, r, cache, cacheLock)
+    endTime = time.time()
+    writeToCSVFile(asyncFile, endTime - startTime)
     return
 
 def canSupressRequest (Cache, x, y, r):
@@ -102,6 +105,7 @@ def syncGet (sock, x, y, z, cache, cacheLock):
     return
 
 def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
+    global localFile, syncFile
     try:
         serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serverAddress = (ServerIp, ServerPort)
@@ -117,9 +121,17 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
             fileSize = getSize(path)
             if (fileSize <= 0):
                 continue;
+            startTime = time.time()
             localizationRequest(serverSock, fileSize, path)
             (x,y,z) = getLocalizationResponse(serverSock)
+            endTime = time.time()
+            writeToCSVFile (localFile, endTime-startTime)
+
+            startTime = time.time()
             syncGet(serverSock, x, y, z, cache, cacheLock)
+            endTime = time.time()
+            writeToCSVFile (syncFile, endTime-startTime)
+
             pointQueue.put((float(x),float(y),float(z)))
         serverSock.close()
     except:
@@ -159,6 +171,8 @@ def main (Cache, CacheLock, imgQueue, pointQueue):
         serverSock.close()
     return;
 
+
+
 def guiService (cache,imgQueue):
     currThread = threading.currentThread()
 
@@ -191,20 +205,19 @@ def guiService (cache,imgQueue):
     httpd = server_class(server_address, handler_class)
     print 'Starting httpd...'
     httpd.serve_forever()
-
-    '''
-    while True:
-        if (getattr(currThread, "exit", False)):
-            return
-        Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-        filename = filedialog.askopenfilename()  # show an "Open" dialog box and return the path to the selected file
-        imgQueue.put(filename)
-        '''
     return
 
 # Initializing Cache and CacheLock
+global LocalizationCsv, SyncFetchCsv, AsyncFetchCsv, localFile, syncFile, asyncFile
+localFile = open(LocalizationCsv, "wb")
+syncFile = open(SyncFetchCsv, "wb")
+asyncFile = open(AsyncFetchCsv, "wb")
+
 Cache = dict()
 CacheLock = threading.Lock()
+
+global csvLock
+csvLock = threading.Lock()
 
 # Initialize Queues
 imageQueue = Queue.Queue()
@@ -231,3 +244,8 @@ cacheThread.exit = True
 cacheThread.join()
 imgProcessThread.join()
 guiThread.join()
+
+localFile.close()
+syncFile.close()
+asyncFile.close()
+
