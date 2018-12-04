@@ -18,14 +18,14 @@ import tkFileDialog as filedialog
 MyIp = "127.0.0.1"
 MyPort = 11111
 
-ServerIp ="127.0.0.1"
+ServerIp ="10.84.166.14"
 ServerPort = 8001
 
 CurrentSession = 1
 
 LocalizationMessageType = 1
 CachingMessageType = 2
-
+radius = 5
 """ Log File """
 ClientLogFile = "/tmp/ClientLog.log"
 ServerLogFile = "/tmp/ServerLog.log"
@@ -38,8 +38,8 @@ AsyncFetchCsv ="/tmp/AsyncFetch.csv"
 
 plyViewerStarted = False
 """ Some Structures for Inter Process Communication """
+csvLock = None
 
-csvLock = None;
 class Payload(Structure):
     _fields_ = [("x", c_uint32), ("y", c_uint32), ("r", c_uint32)]
 
@@ -67,7 +67,7 @@ def log (header, logFile, msg):
 
 def readDoubleFromNetwork (connection):
     readData = None
-    readData = connection.recv(4)
+    readData = connection.recv(8)
     if (len(readData) == 0):
         return 0
     toRead = struct.unpack('!d', readData)[0]
@@ -82,16 +82,6 @@ def readIntegerFromNetwork (connection):
     toRead = struct.unpack('!i', readData)[0]
     return toRead
 
-def readCoOrdinatesFromNetwork (connection):
-    readData = None
-    readData = connection.recv(12)
-    if (len(readData) == 0):
-        return None
-    x = struct.unpack('!d d d', readData)[0]
-    y = struct.unpack('!d d d', readData)[1]
-    r = struct.unpack('!d d d', readData)[2]
-    coord = Coordinates(x,y,r)
-    return coord
 
 def getSize(filename):
     st = os.stat(filename)
@@ -117,7 +107,7 @@ def logClient (msg):
     return log("ClientLog", ClientLogFile, msg)
 
 def writeBinaryDataToFile (binaryData, filePath):
-    myfile = open(outFilePath, "wb")
+    myfile = open(filePath, "wb+")
     myfile.write(binaryData)
     myfile.close()
     return
@@ -156,9 +146,3 @@ def readByteFromSock (sock, toReadSize):
         toReadSize -= len(packet)
         binaryData += packet
     return binaryData
-
-def writeToCSVFile (file, content):
-    csvLock.acquire()
-    file.write(getCurrTime()+","+str(content)+"\n")
-    csvLock.release()
-    return
