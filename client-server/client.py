@@ -238,9 +238,9 @@ def guiService (cache,imgQueue):
 
 # Initializing Cache and CacheLock
 global LocalizationCsv, SyncFetchCsv, AsyncFetchCsv, localFile, syncFile, asyncFile
-localFile = open(LocalizationCsv, "wb")
-syncFile = open(SyncFetchCsv, "wb")
-asyncFile = open(AsyncFetchCsv, "wb")
+localFile = open(LocalizationCsv, "w+")
+syncFile = open(SyncFetchCsv, "w+")
+asyncFile = open(AsyncFetchCsv, "w+")
 
 Cache = dict()
 CacheLock = threading.Lock()
