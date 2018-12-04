@@ -1,13 +1,12 @@
 from globals import *
 
-def writeToCSVFile (file, content):
+def writeToCSVFile (filePath, content):
     global csvLock
     csvLock.acquire()
-    print (" acuired the lock")
+    file = open(filePath, "a")
     file.write(getCurrTime()+","+str(content)+"\n")
-    print (" wrote releaseing the lock")
+    file.close()
     csvLock.release()
-    print (" returning")
     return
 
 def localizationRequest (sock, size, path):
@@ -15,8 +14,11 @@ def localizationRequest (sock, size, path):
     return
 
 def getLocalizationResponse (sock):
-    a = sock.recv(28)
-    type,x,y,z = struct.unpack('!i d d d', a)
+    try:
+        a = sock.recv(28)
+        type,x,y,z = struct.unpack('!i d d d', a)
+    except:
+        return float('-inf'),float('-inf'),float('-inf')
     #type = readIntegerFromNetwork(sock)
     #x = readDoubleFromNetwork(sock)
     #y = readDoubleFromNetwork(sock)
@@ -80,9 +82,10 @@ def asyncGet(x, y, z, cache, cacheLock):
     return
 
 def fetchAround (x, y, z, cache, cacheLock):
-    global asyncFile
+    global AsyncFetchCsv
     global radius
-    firstLevel = [(x+radius,y,z), (x-radius,y,z) , (x,y+radius,z), (x,y-radius,z)]
+    r = 1.3*radius
+    firstLevel = [(x+r,y,z), (x-r,y,z) , (x,y+r,z), (x,y-r,z)]
     startTime = time.time()
     Threads = []
     for (x1,y1,z1) in firstLevel:
@@ -90,9 +93,15 @@ def fetchAround (x, y, z, cache, cacheLock):
             continue;
         asyncThread = threading.Thread(target=asyncGet,args=(x1,y1,z1,cache, cacheLock))
         Threads.append(asyncThread)
-        asyncThread.start()
+
+    for thread in Threads:
+        thread.start()
+
+    for thread in Threads:
+        thread.join()
+
     endTime = time.time()
-    writeToCSVFile(asyncFile, endTime - startTime)
+    writeToCSVFile(AsyncFetchCsv, endTime - startTime)
     return
 
 def canSupressRequest (Cache, x, y, z):
@@ -110,8 +119,9 @@ def canSupressRequest (Cache, x, y, z):
     return False
 
 def syncGet (x, y, z, cache, cacheLock):
-    global radius
+    global radius,SyncFetchCsv
     if (True == canSupressRequest(Cache, x, y, z)):
+        writeToCSVFile(SyncFetchCsv, 0)
         return;
     outFilePath = getCacheFilePath(x, y, z, radius)
     startTime = time.time()
@@ -124,7 +134,7 @@ def syncGet (x, y, z, cache, cacheLock):
     sock.close()
 
     endTime = time.time()
-    writeToCSVFile(syncFile, endTime - startTime)
+    writeToCSVFile(SyncFetchCsv, endTime - startTime)
 
     writeBinaryDataToFile(binaryData, outFilePath)
     startorUpdateDisplay(outFilePath)
@@ -135,7 +145,7 @@ def syncGet (x, y, z, cache, cacheLock):
     return
 
 def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
-    global localFile, syncFile
+    global LocalizationCsv
     while True:
         currThread = threading.currentThread()
 
@@ -162,8 +172,9 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
         print (" closed the socket")
         endTime = time.time()
         print (" time "+str(endTime))
-        writeToCSVFile (localFile, endTime-startTime)
-        pointQueue.put((float(x),float(y),float(z)))
+        if not ((x == float('-inf')) and (y == float('-inf')) and (z == float('-inf'))):
+            writeToCSVFile(LocalizationCsv, endTime - startTime)
+            pointQueue.put((float(x),float(y),float(z)))
         print (" added to pointqueue")
 
     return
@@ -237,10 +248,14 @@ def guiService (cache,imgQueue):
     return
 
 # Initializing Cache and CacheLock
-global LocalizationCsv, SyncFetchCsv, AsyncFetchCsv, localFile, syncFile, asyncFile
-localFile = open(LocalizationCsv, "w+")
-syncFile = open(SyncFetchCsv, "w+")
-asyncFile = open(AsyncFetchCsv, "w+")
+global LocalizationCsv, SyncFetchCsv, AsyncFetchCsv
+file = open(LocalizationCsv, "w")
+file.close()
+file = open(SyncFetchCsv, "w")
+file.close()
+file = open(AsyncFetchCsv, "w")
+file.close()
+
 
 Cache = dict()
 CacheLock = threading.Lock()
@@ -273,8 +288,4 @@ cacheThread.exit = True
 cacheThread.join()
 imgProcessThread.join()
 guiThread.join()
-
-localFile.close()
-syncFile.close()
-asyncFile.close()
 

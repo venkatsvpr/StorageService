@@ -33,7 +33,7 @@ ClientLogFile = "/tmp/ClientLog.log"
 ServerLogFile = "/tmp/ServerLog.log"
 
 """  Metrics Files """
-LocalizationCsv = SyncFetchCsv = AsyncFetchCsv = localFile = syncFile = asyncFile = None
+LocalizationCsv = SyncFetchCsv = AsyncFetchCsv  = None
 LocalizationCsv ="/tmp/Localization.csv"
 SyncFetchCsv ="/tmp/SyncFetch.csv"
 AsyncFetchCsv ="/tmp/AsyncFetch.csv"
