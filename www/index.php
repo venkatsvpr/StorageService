@@ -63,7 +63,7 @@
 
                 <?php
                     //$dir = getcwd()."/";
-                    $pic_directory = "cooke_col_2";
+                    $pic_directory = "user_loc_rgb";
                     //$files_dir = $dir.$pic_directory;
                     foreach(glob($pic_directory.'/*.jpg') as $file) {
                         $go = realpath($file);
