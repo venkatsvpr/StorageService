@@ -17,7 +17,7 @@
            setInterval("getCSVDataForGraph();",5000);
        }
  </script>
- 
+
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
@@ -42,24 +42,26 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarResponsive">
           <ul class="navbar-nav ml-auto">
-            <li class="nav-item active">
+            <!-- <li class="nav-item active">
               <a class="nav-link" href="#">Home
                 <span class="sr-only">(current)</span>
               </a>
-            </li>
+            </li> -->
           </ul>
         </div>
       </div>
     </nav>
 
     <!-- Page Content -->
-    <div class="container">
+    <div class="container-fluid">
     <div class="row">
-    <div class="col-sm-6" style="border-right:1px solid #eee; overflow-y: scroll; height:750px;">
+    <div class="col-sm-5" style="border-right:1px solid #eee; ">
               <h3 class="my-4 text-center text-lg-left">Virtual Locations of the User </h3>
-
+              <div class="col-sm-12" style="height:300px">
+                   <img id="preview-image" src="" alt="Current Location of the User" height="300px" width="100%">
+              </div>
+              <div class="col-sm-12" style="overflow-y: scroll; height:450px;">
               <div class="row text-center text-lg-left">
-
 
                 <?php
                     //$dir = getcwd()."/";
@@ -68,8 +70,8 @@
                     foreach(glob($pic_directory.'/*.jpg') as $file) {
                         $go = realpath($file);
                         print("<div class='col-lg-3 col-md-4 col-xs-6'>
-                                    <a href='#' class='d-block mb-4 h-100'>
-                                        <img class='img-fluid img-thumbnail' src='$file' onclick='sendFileName(\"$go\")'>
+                                    <a href='#' class='d-block mb-4 h-150'>
+                                        <img class='img-fluid img-thumbnail' src='$file' onclick='sendFileName(\"$go\",\"$file\")'>
                                     </a>
                                 </div>");
                     }
@@ -77,24 +79,28 @@
 
 
               </div>
+            </div>
     </div>
         <!-- charts -->
-    <div class="col-sm-6" id = "chart_div">
+    <div class="col-sm-7" id = "chart_div">
         <div class="row">
-            <div class="col-sm-12">
+            <div class="col-sm-6">
                 <canvas id="myChart1" width="500px" height="200"></canvas>
             </div>
-        </div>
-        <div class="row">
-            <div class="col-sm-12">
+            <div class="col-sm-6">
                 <canvas id="myChart2" width="500px" height="200"></canvas>
             </div>
         </div>
-        <div class="row">
-            <div class="col-sm-12">
+        <div class="row" style="border-bottom:1px solid #eee;">
+            <div class="col-sm-6">
                 <canvas id="myChart3" width="500px" height="200"></canvas>
             </div>
         </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <canvas id = "trajectory" width = "500px" height = "200"></canvas>
+          </div>
+        <div>
     </div>
 </div>
 </div>
@@ -113,7 +119,10 @@
   <script>
 
 
-function sendFileName(file_path){
+function sendFileName(file_path, server_path){
+
+  $('#preview-image').attr('src', server_path);
+  console.log(file_path);
    getCSVDataForGraph();
    url ="http://localhost:8099?url="+file_path;
    var xmlHttp = new XMLHttpRequest();
@@ -162,6 +171,8 @@ function getCSVDataForGraph(){
       }
   });
 
+  graph4();
+
 }
 function graph1(labels, data){
   var ctx1 = document.getElementById("myChart1").getContext('2d');
@@ -194,13 +205,16 @@ function graph1(labels, data){
           }]
       },
       options: {
-          scales: {
-              yAxes: [{
-                  ticks: {
-                      beginAtZero:true
-                  }
-              }]
-          }
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero:true
+                }
+            }]
+        },
+          animation: {
+            duration: 0
+            }
       }
   });
 }
@@ -242,7 +256,10 @@ function graph2(labels, data){
                       beginAtZero:true
                   }
               }]
-          }
+          },
+            animation: {
+              duration: 0
+              }
       }
   });
 }
@@ -257,6 +274,50 @@ function graph3(labels, data){
               label: '# of Votes',
                   data: data,
                   fill: false,
+              backgroundColor: [
+                  'rgba(255, 99, 132, 0.2)',
+                  'rgba(54, 162, 235, 0.2)',
+                  'rgba(255, 206, 86, 0.2)',
+                  'rgba(75, 192, 192, 0.2)',
+                  'rgba(153, 102, 255, 0.2)',
+                  'rgba(255, 159, 64, 0.2)'
+              ],
+              borderColor: [
+                  'rgba(255,99,132,1)',
+                  'rgba(54, 162, 235, 1)',
+                  'rgba(255, 206, 86, 1)',
+                  'rgba(75, 192, 192, 1)',
+                  'rgba(153, 102, 255, 1)',
+                  'rgba(255, 159, 64, 1)'
+              ],
+              borderWidth: 1
+          }]
+      },
+      options: {
+          scales: {
+              yAxes: [{
+                  ticks: {
+                      beginAtZero:true
+                  }
+              }]
+          },
+            animation: {
+              duration: 0
+              }
+      }
+  });
+}
+
+function graph4(labels, data){
+  var ctx3 = document.getElementById("trajectory").getContext('2d');
+  var myChart = new Chart(ctx3, {
+      type: 'line',
+      data: {
+        //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+        labels: labels,
+          datasets: [{
+              label: '# of Votes',
+              data: data,
               backgroundColor: [
                   'rgba(255, 99, 132, 0.2)',
                   'rgba(54, 162, 235, 0.2)',
