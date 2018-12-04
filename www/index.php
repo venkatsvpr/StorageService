@@ -196,7 +196,7 @@ function graph1(labels, data){
         //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
         labels: labels,
           datasets: [{
-              label: '# of Votes',
+              label: 'Time taken for localization',
                   data: data,
                   fill: false,
               backgroundColor: [
@@ -241,7 +241,7 @@ function graph2(labels, data){
         //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
         labels: labels,
           datasets: [{
-              label: '# of Votes',
+              label: 'Time taken for synchronous requests',
                   data: data,
                   fill: false,
               backgroundColor: [
@@ -285,7 +285,7 @@ function graph3(labels, data){
         //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
         labels: labels,
           datasets: [{
-              label: '# of Votes',
+              label: 'time taken for asynchronous request',
                   data: data,
                   fill: false,
               backgroundColor: [
@@ -358,7 +358,10 @@ function graph4(labels, data){
                       beginAtZero:true
                   }
               }]
-          }
+          },
+          animation: {
+            duration: 0
+            }
       }
   });
 }

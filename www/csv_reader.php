@@ -3,7 +3,7 @@
   $csv_file_loc = "/tmp/Localization.csv";
   $csv_file_sync = "/tmp/SyncFetch.csv";
   $csv_file_async = "/tmp/AsyncFetch.csv";
-  $csv_trajectory = "/tmp/trajectory.csv";
+  $csv_trajectory = "/tmp/Trajectory.csv";
 
 
 
