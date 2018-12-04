@@ -100,13 +100,12 @@ def getSize(filename):
 
 def sendFileOnSock (sock, path):
     print ("Sending file to client")
-    file = open(filePath,'rb')
-    data = file.read(1024)
-    while (data):
-       sock.send(data)
-       data = file.read(1024)
-    print ("sent")
-    file.close()
+    data = None
+    with open(path, 'rb') as f:
+        data = f.read()
+    if (data != None):
+        sock.sendall(data)
+        print ("sent")
     return
 
 def killDisplaySession (sessionNumber):
