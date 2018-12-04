@@ -57,7 +57,10 @@
     <div class="row">
     <div class="col-sm-5" style="border-right:1px solid #eee; ">
               <h3 class="my-4 text-center text-lg-left">Virtual Locations of the User </h3>
-              <div class="col-sm-12" style="overflow-y: scroll; height:750px;">
+              <div class="col-sm-12" style="height:300px">
+                   <img id="preview-image" src="" alt="Current Location of the User" height="300px" width="100%">
+              </div>
+              <div class="col-sm-12" style="overflow-y: scroll; height:450px;">
               <div class="row text-center text-lg-left">
 
                 <?php
@@ -68,7 +71,7 @@
                         $go = realpath($file);
                         print("<div class='col-lg-3 col-md-4 col-xs-6'>
                                     <a href='#' class='d-block mb-4 h-150'>
-                                        <img class='img-fluid img-thumbnail' src='$file' onclick='sendFileName(\"$go\")'>
+                                        <img class='img-fluid img-thumbnail' src='$file' onclick='sendFileName(\"$go\",\"$file\")'>
                                     </a>
                                 </div>");
                     }
@@ -116,7 +119,10 @@
   <script>
 
 
-function sendFileName(file_path){
+function sendFileName(file_path, server_path){
+
+  $('#preview-image').attr('src', server_path);
+  console.log(file_path);
    getCSVDataForGraph();
    url ="http://localhost:8099?url="+file_path;
    var xmlHttp = new XMLHttpRequest();
