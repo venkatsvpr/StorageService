@@ -115,7 +115,7 @@ function sendFileName(file_path){
 }
 
 function getCSVDataForGraph(){
-  url = "http://localhost:8071/csv_reader.php?time-plot=true";
+  url = "http://localhost:8071/csv_reader.php?time-localization=true";
   var saveData = $.ajax({
       type: 'GET',
       url: url,
@@ -124,6 +124,32 @@ function getCSVDataForGraph(){
          console.log(resultData);
          var json = JSON.parse(resultData);
          graph1(json.label, json.time);
+
+      }
+  });
+
+  url = "http://localhost:8071/csv_reader.php?time-sync=true";
+  var saveData = $.ajax({
+      type: 'GET',
+      url: url,
+      dataType: "text",
+      success: function(resultData) {
+         console.log(resultData);
+         var json = JSON.parse(resultData);
+         graph2(json.label, json.time);
+
+      }
+  });
+
+  url = "http://localhost:8071/csv_reader.php?time-async=true";
+  var saveData = $.ajax({
+      type: 'GET',
+      url: url,
+      dataType: "text",
+      success: function(resultData) {
+         console.log(resultData);
+         var json = JSON.parse(resultData);
+         graph3(json.label, json.time);
 
       }
   });
@@ -169,81 +195,87 @@ function graph1(labels, data){
       }
   });
 }
-var ctx2 = document.getElementById("myChart2").getContext('2d');
-var myChart = new Chart(ctx2, {
-    type: 'bubble',
-    data: {
-        labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-        datasets: [{
-            label: '# of Votes',
-            data: [12, 19, 3, 5, 2, 3],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-            borderWidth: 1
-        }]
-    },
-    options: {
-        scales: {
-            yAxes: [{
-                ticks: {
-                    beginAtZero:true
-                }
-            }]
-        }
-    }
-});
 
-var ctx3 = document.getElementById("myChart3").getContext('2d');
-var myChart = new Chart(ctx3, {
-    type: 'line',
-    data: {
-        labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-        datasets: [{
-            label: '# of Votes',
-            data: [12, 19, 3, 5, 2, 3],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255,99,132,1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-            borderWidth: 1
-        }]
-    },
-    options: {
-        scales: {
-            yAxes: [{
-                ticks: {
-                    beginAtZero:true
-                }
-            }]
-        }
-    }
-});
+function graph2(labels, data){
+  var ctx2 = document.getElementById("myChart2").getContext('2d');
+  var myChart = new Chart(ctx2, {
+      type: 'line',
+      data: {
+        //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+        labels: labels,
+          datasets: [{
+              label: '# of Votes',
+              data: data,
+              backgroundColor: [
+                  'rgba(255, 99, 132, 0.2)',
+                  'rgba(54, 162, 235, 0.2)',
+                  'rgba(255, 206, 86, 0.2)',
+                  'rgba(75, 192, 192, 0.2)',
+                  'rgba(153, 102, 255, 0.2)',
+                  'rgba(255, 159, 64, 0.2)'
+              ],
+              borderColor: [
+                  'rgba(255,99,132,1)',
+                  'rgba(54, 162, 235, 1)',
+                  'rgba(255, 206, 86, 1)',
+                  'rgba(75, 192, 192, 1)',
+                  'rgba(153, 102, 255, 1)',
+                  'rgba(255, 159, 64, 1)'
+              ],
+              borderWidth: 1
+          }]
+      },
+      options: {
+          scales: {
+              yAxes: [{
+                  ticks: {
+                      beginAtZero:true
+                  }
+              }]
+          }
+      }
+  });
+}
+function graph3(labels, data){
+  var ctx3 = document.getElementById("myChart3").getContext('2d');
+  var myChart = new Chart(ctx3, {
+      type: 'line',
+      data: {
+        //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+        labels: labels,
+          datasets: [{
+              label: '# of Votes',
+              data: data,
+              backgroundColor: [
+                  'rgba(255, 99, 132, 0.2)',
+                  'rgba(54, 162, 235, 0.2)',
+                  'rgba(255, 206, 86, 0.2)',
+                  'rgba(75, 192, 192, 0.2)',
+                  'rgba(153, 102, 255, 0.2)',
+                  'rgba(255, 159, 64, 0.2)'
+              ],
+              borderColor: [
+                  'rgba(255,99,132,1)',
+                  'rgba(54, 162, 235, 1)',
+                  'rgba(255, 206, 86, 1)',
+                  'rgba(75, 192, 192, 1)',
+                  'rgba(153, 102, 255, 1)',
+                  'rgba(255, 159, 64, 1)'
+              ],
+              borderWidth: 1
+          }]
+      },
+      options: {
+          scales: {
+              yAxes: [{
+                  ticks: {
+                      beginAtZero:true
+                  }
+              }]
+          }
+      }
+  });
+}
 </script>
 
 </html>
