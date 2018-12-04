@@ -60,7 +60,7 @@
               <div class="col-sm-12" style="height:300px">
                    <img id="preview-image" src="" alt="Current Location of the User" height="300px" width="100%">
               </div>
-              <div class="col-sm-12" style="overflow-y: scroll; height:450px;">
+              <div class="col-sm-12" style="overflow-y: scroll; height:450px; margin-top:10px;">
               <div class="row text-center text-lg-left">
 
                 <?php
@@ -133,12 +133,13 @@ function sendFileName(file_path, server_path){
 
 function getCSVDataForGraph(){
   url = "http://localhost:8071/csv_reader.php?time-localization=true";
+
   var saveData = $.ajax({
       type: 'GET',
       url: url,
       dataType: "text",
       success: function(resultData) {
-         console.log(resultData);
+      //   console.log(resultData);
          var json = JSON.parse(resultData);
          graph1(json.label, json.time);
 
@@ -151,7 +152,7 @@ function getCSVDataForGraph(){
       url: url,
       dataType: "text",
       success: function(resultData) {
-         console.log(resultData);
+      //   console.log(resultData);
          var json = JSON.parse(resultData);
          graph2(json.label, json.time);
 
@@ -164,14 +165,27 @@ function getCSVDataForGraph(){
       url: url,
       dataType: "text",
       success: function(resultData) {
-         console.log(resultData);
+      //   console.log(resultData);
          var json = JSON.parse(resultData);
          graph3(json.label, json.time);
 
       }
   });
 
-  graph4();
+  url = "http://localhost:8071/csv_reader.php?trajectory=true";
+  var saveData = $.ajax({
+      type: 'GET',
+      url: url,
+      dataType: "text",
+      success: function(resultData) {
+        console.log(resultData);
+         var json = JSON.parse(resultData);
+         //graph3(json.label, json.time);
+
+      }
+  });
+
+//  graph4();
 
 }
 function graph1(labels, data){
