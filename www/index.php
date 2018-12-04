@@ -10,6 +10,14 @@
 <html lang="en">
 
   <head>
+    <script type="text/javascript">
+       window.onload = setupRefresh;
+       function setupRefresh()
+       {
+           setInterval("getCSVDataForGraph();",5000);
+       }
+ </script>
+ 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
@@ -71,7 +79,7 @@
               </div>
     </div>
         <!-- charts -->
-    <div class="col-sm-6" >
+    <div class="col-sm-6" id = "chart_div">
         <div class="row">
             <div class="col-sm-12">
                 <canvas id="myChart1" width="500px" height="200"></canvas>
