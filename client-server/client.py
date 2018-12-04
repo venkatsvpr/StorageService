@@ -27,6 +27,7 @@ def getLocalizationResponse (sock):
 def sendTypeOneRequest (sock, size, path):
     type = LocalizationMessageType
     logClient ("  Sending request type,size : "+str(type)+" "+str(size))
+    print("  Sending request type,size : "+str(type)+" "+str(size))
     sock.sendall (struct.pack('!i i',type,size))
     sendFileOnSock (sock,path)
     return
@@ -137,6 +138,7 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
     global localFile, syncFile
     while True:
         currThread = threading.currentThread()
+
         if (getattr(currThread, "exit", False)):
             return
         try:
@@ -163,6 +165,7 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
         writeToCSVFile (localFile, endTime-startTime)
         pointQueue.put((float(x),float(y),float(z)))
         print (" added to pointqueue")
+
     return
 
 def cachingService (cache, cacheLock, queue):
@@ -197,14 +200,40 @@ def main (Cache, CacheLock, imgQueue, pointQueue):
         serverSock.close()
     return;
 
+
+
 def guiService (cache,imgQueue):
     currThread = threading.currentThread()
-    while (True):
-        if (getattr(currThread, "exit", False)):
-            return
-        Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-        filename = filedialog.askopenfilename()  # show an "Open" dialog box and return the path to the selected file
-        imgQueue.put(filename)
+
+    class S(BaseHTTPRequestHandler):
+        def _set_headers(self):
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+
+        def do_GET(self):
+            print self.path
+            query_dict =  parse_qs(self.path[2:])
+            file_path = query_dict.get("url")[0]
+            print file_path
+            imgQueue.put(file_path)
+            self._set_headers()
+            self.wfile.write("<html><body><h1>File location has been sent</h1></body></html>")
+
+        def do_HEAD(self):
+            self._set_headers()
+
+        def do_POST(self):
+            # Doesn't do anything with posted data
+            self._set_headers()
+            self.wfile.write("<html><body><h1>Post</h1></body></html>")
+
+    server_address = ('', 8099)
+    server_class=HTTPServer
+    handler_class=S
+    httpd = server_class(server_address, handler_class)
+    print 'Starting httpd...'
+    httpd.serve_forever()
     return
 
 # Initializing Cache and CacheLock
@@ -248,3 +277,4 @@ guiThread.join()
 localFile.close()
 syncFile.close()
 asyncFile.close()
+
