@@ -14,6 +14,7 @@ def getLocalizationResponse (sock):
 def sendTypeOneRequest (sock, size, path):
     type = LocalizationMessageType
     logClient ("  Sending request type,size : "+str(type)+" "+str(size))
+    print("  Sending request type,size : "+str(type)+" "+str(size))
     sock.sendall (struct.pack('!i i',type,size))
     sendFileOnSock (sock,path)
     return
@@ -122,6 +123,7 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
             if (fileSize <= 0):
                 continue;
             startTime = time.time()
+	    print ("imgProcessingService file zise " , str(fileSize))
             localizationRequest(serverSock, fileSize, path)
             (x,y,z) = getLocalizationResponse(serverSock)
             endTime = time.time()
