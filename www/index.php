@@ -197,7 +197,8 @@ function graph1(labels, data){
         labels: labels,
           datasets: [{
               label: '# of Votes',
-              data: data,
+                  data: data,
+                  fill: false,
               backgroundColor: [
                   'rgba(255, 99, 132, 0.2)',
                   'rgba(54, 162, 235, 0.2)',
@@ -218,13 +219,16 @@ function graph1(labels, data){
           }]
       },
       options: {
-          scales: {
-              yAxes: [{
-                  ticks: {
-                      beginAtZero:true
-                  }
-              }]
-          }
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero:true
+                }
+            }]
+        },
+          animation: {
+            duration: 0
+            }
       }
   });
 }
@@ -238,7 +242,8 @@ function graph2(labels, data){
         labels: labels,
           datasets: [{
               label: '# of Votes',
-              data: data,
+                  data: data,
+                  fill: false,
               backgroundColor: [
                   'rgba(255, 99, 132, 0.2)',
                   'rgba(54, 162, 235, 0.2)',
@@ -265,7 +270,10 @@ function graph2(labels, data){
                       beginAtZero:true
                   }
               }]
-          }
+          },
+            animation: {
+              duration: 0
+              }
       }
   });
 }
@@ -278,7 +286,8 @@ function graph3(labels, data){
         labels: labels,
           datasets: [{
               label: '# of Votes',
-              data: data,
+                  data: data,
+                  fill: false,
               backgroundColor: [
                   'rgba(255, 99, 132, 0.2)',
                   'rgba(54, 162, 235, 0.2)',
@@ -305,7 +314,10 @@ function graph3(labels, data){
                       beginAtZero:true
                   }
               }]
-          }
+          },
+            animation: {
+              duration: 0
+              }
       }
   });
 }
