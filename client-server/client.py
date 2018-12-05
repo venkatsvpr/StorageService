@@ -23,13 +23,11 @@ def getLocalizationResponse (sock):
     #x = readDoubleFromNetwork(sock)
     #y = readDoubleFromNetwork(sock)
     #z = readDoubleFromNetwork(sock)
-    print (" local response ",type,x,y,z)
     return x,y,z
 
 def sendTypeOneRequest (sock, size, path):
     type = LocalizationMessageType
     logClient ("  Sending request type,size : "+str(type)+" "+str(size))
-    print("  Sending request type,size : "+str(type)+" "+str(size))
     sock.sendall (struct.pack('!i i',type,size))
     sendFileOnSock (sock,path)
     return
@@ -152,11 +150,10 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
         if (getattr(currThread, "exit", False)):
             return
         try:
-            print ("Waiting for activity on imgQueue")
+            #print ("Waiting for activity on imgQueue")
             path = imgQueue.get(timeout=2)
         except:
             continue;
-        print (" got path "+path)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serverAddress = (ServerIp, ServerPort)
         sock.connect(serverAddress)
@@ -167,16 +164,11 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
         startTime = time.time()
         localizationRequest(sock, fileSize, path)
         (x,y,z) = getLocalizationResponse(sock)
-        print (" going to close")
         sock.close()
-        print (" closed the socket")
         endTime = time.time()
-        print (" time "+str(endTime))
         if not ((x == float('-inf')) and (y == float('-inf')) and (z == float('-inf'))):
             writeToCSVFile(LocalizationCsv, endTime - startTime)
             pointQueue.put((float(x),float(y),float(z)))
-        print (" added to pointqueue")
-
     return
 
 def cachingService (cache, cacheLock, queue):
@@ -185,7 +177,7 @@ def cachingService (cache, cacheLock, queue):
         if (getattr(currThread, "exit", False)):
             break
         try:
-            print ("Waiting for activity on pointQueue")
+            #print ("Waiting for activity on pointQueue")
             (x,y,z) = queue.get(timeout= 2)
         except:
             continue;
@@ -243,7 +235,7 @@ def guiService (cache,imgQueue):
     server_class=HTTPServer
     handler_class=S
     httpd = server_class(server_address, handler_class)
-    print 'Starting httpd...'
+    #print 'Starting httpd...'
     httpd.serve_forever()
     return
 

@@ -27,7 +27,7 @@ CurrentSession = 1
 
 LocalizationMessageType = 1
 CachingMessageType = 2
-radius = 5
+radius = 3.5
 """ Log File """
 ClientLogFile = "/tmp/ClientLog.log"
 ServerLogFile = "/tmp/ServerLog.log"
