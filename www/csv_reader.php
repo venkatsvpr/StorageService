@@ -1,9 +1,9 @@
 
 <?php
-  $csv_file_loc = "test_csv/Localization.csv";
-  $csv_file_sync = "test_csv/SyncFetch.csv";
-  $csv_file_async = "test_csv/AsyncFetch.csv";
-  $csv_trajectory = "test_csv/Trajectory.csv";
+  $csv_file_loc = "/tmp/Localization.csv";
+  $csv_file_sync = "/tmp/SyncFetch.csv";
+  $csv_file_async = "/tmp/AsyncFetch.csv";
+  $csv_trajectory = "/tmp/Trajectory.csv";
 
 
 
@@ -69,28 +69,6 @@
     $map['sync'] = $sync;
     $map['async'] = $async;
     $map['label'] = $labels;
-
-    $response_json = json_encode($map);
-    echo $response_json;
-  }
-
-  if(isset($_REQUEST["time-sync"]) && $_REQUEST["time-sync"] ){
-
-  }
-
-  if(isset($_REQUEST["time-async"]) && $_REQUEST["time-async"]){
-    $labels = array();
-    $time = array();
-    $file = fopen($csv_file_async, 'r');
-    $label = 0;
-    while (($line = fgetcsv($file)) !== FALSE) {
-      $labels[] = $label++;
-      $time[] = $line[1];
-    }
-    $map = array();
-    $map['label'] = $labels;
-    $map['time'] = $time;
-    fclose($file);
 
     $response_json = json_encode($map);
     echo $response_json;
