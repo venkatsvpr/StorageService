@@ -1,14 +1,28 @@
 from globals import *
 
+def writeToCSVFile (filePath, content):
+    global csvLock
+    csvLock.acquire()
+    file = open(filePath, "a")
+    file.write(getCurrTime()+","+str(content)+"\n")
+    file.close()
+    csvLock.release()
+    return
+
 def localizationRequest (sock, size, path):
     sendTypeOneRequest(sock, size, path)
     return
 
 def getLocalizationResponse (sock):
-    type = readIntegerFromNetwork(sock)
-    x = readDoubleFromNetwork(sock)
-    y = readDoubleFromNetwork(sock)
-    z = readDoubleFromNetwork(sock)
+    try:
+        a = sock.recv(28)
+        type,x,y,z = struct.unpack('!i d d d', a)
+    except:
+        return float('-inf'),float('-inf'),float('-inf')
+    #type = readIntegerFromNetwork(sock)
+    #x = readDoubleFromNetwork(sock)
+    #y = readDoubleFromNetwork(sock)
+    #z = readDoubleFromNetwork(sock)
     return x,y,z
 
 def sendTypeOneRequest (sock, size, path):
@@ -40,102 +54,121 @@ def getPlyResponse (sock):
         binaryData += packet
     return binaryData
 
-def asyncGet(x, y, z, r, cache, cacheLock):
-    try:
-        logClient (" Opportunistic fetching x,y,z,r "+str(x)+","+str(y)+","+str(z)+","+str(r))
+def asyncGet(x, y, z, cache, cacheLock):
+    global radius
+    if True:
+        logClient (" Opportunistic fetching x,y,z,r "+str(x)+","+str(y)+","+str(z)+","+str(radius))
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serverAddress = (ServerIp, ServerPort)
         sock.connect(serverAddress)
 
-        outFilePath = getCacheFilePath (x,y,z,r)
+        outFilePath = getCacheFilePath (x,y,z,radius)
 
-        plyRequestToServer (sock, x, y, z, r)
+        getPlyRequest (sock, x, y, z, radius)
         binaryData = getPlyResponse(sock)
-        writeBinaryDataToFile(binaryData, outFilePath)
         sock.close()
-
+        writeBinaryDataToFile(binaryData, outFilePath)
         startorUpdateDisplay(outFilePath)
 
         cacheLock.acquire()
-        cache[(x,y,r)] = outFilePath
+        cache[(x,y,z,radius)] = outFilePath
         cacheLock.release()
+    """
     except:
         print (" Cannot connect to server ")
+    """
     return
 
-def fetchAround (x, y, r, cache, cacheLock):
-    global asyncFile
-    firstLevel = [(x+r,y), (x-r,y) , (x,y+r), (x,y-r)]
+def fetchAround (x, y, z, cache, cacheLock):
+    global AsyncFetchCsv
+    global radius
+    r = 1.3*radius
+    firstLevel = [(x+r,y,z), (x-r,y,z) , (x,y+r,z), (x,y-r,z)]
     startTime = time.time()
-    for (x1,y1) in firstLevel:
-        if (canSupressRequest(cache, x1, y1, r)):
+    Threads = []
+    for (x1,y1,z1) in firstLevel:
+        if (canSupressRequest(cache, x1, y1, z1)):
             continue;
-        asyncGet(x1, y1, r, cache, cacheLock)
+        asyncThread = threading.Thread(target=asyncGet,args=(x1,y1,z1,cache, cacheLock))
+        Threads.append(asyncThread)
+
+    for thread in Threads:
+        thread.start()
+
+    for thread in Threads:
+        thread.join()
+
     endTime = time.time()
-    writeToCSVFile(asyncFile, endTime - startTime)
+    writeToCSVFile(AsyncFetchCsv, endTime - startTime)
     return
 
-def canSupressRequest (Cache, x, y, r):
+def canSupressRequest (Cache, x, y, z):
+    global radius
     pq = Queue.PriorityQueue()
     # Find the closest point
-    for (x1,y1,r1) in Cache:
-        dist = math.sqrt((x-x1)**2 + (y-y1)**2)
-        pq.put((dist, (x1,y1,r1)))
+    for (x1,y1,z1,radius) in Cache:
+        dist = math.sqrt((x-x1)**2 + (y-y1)**2 + (z-z1)**2)
+        pq.put((dist, (x1,y1,z1)))
     if (0 == pq.qsize()):
         return False
     (dist, tup) = pq.get()
-    if (dist < (r/3)):
+    if (dist < (radius/3)):
         return True
     return False
 
-def syncGet (sock, x, y, z, cache, cacheLock):
-    global radius
-    if (True == canSupressRequest(Cache, x, y, z, radius)):
+def syncGet (x, y, z, cache, cacheLock):
+    global radius,SyncFetchCsv
+    if (True == canSupressRequest(Cache, x, y, z)):
+        writeToCSVFile(SyncFetchCsv, 0)
         return;
-    outFilePath = getCacheFilePath (x, y, z, radius)
-    plyRequestToServer(sock, x, y, z, radius)
-    binaryData = PlyResponse(sock)
-    writeBinaryDataToFile(binaryData, outFilePath)
+    outFilePath = getCacheFilePath(x, y, z, radius)
+    startTime = time.time()
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serverAddress = (ServerIp, ServerPort)
+    sock.connect(serverAddress)
+    #ply request
+    getPlyRequest(sock, x, y, z, radius)
+    binaryData = getPlyResponse(sock)
+    sock.close()
 
+    endTime = time.time()
+    writeToCSVFile(SyncFetchCsv, endTime - startTime)
+
+    writeBinaryDataToFile(binaryData, outFilePath)
     startorUpdateDisplay(outFilePath)
 
     cacheLock.acquire()
-    cache[(x,y,r)] = outFilePath
+    cache[(x,y,z,radius)] = outFilePath
     cacheLock.release()
     return
 
 def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
-    global localFile, syncFile
-    try:
-        serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        serverAddress = (ServerIp, ServerPort)
-        serverSock.connect(serverAddress)
+    global LocalizationCsv
+    while True:
         currThread = threading.currentThread()
-        while True:
-            if (getattr(currThread, "exit", False)):
-                break
-            try:
-                path = imgQueue.get(timeout=2)
-            except:
-                continue;
-            fileSize = getSize(path)
-            if (fileSize <= 0):
-                continue;
-            startTime = time.time()
-            localizationRequest(serverSock, fileSize, path)
-            (x,y,z) = getLocalizationResponse(serverSock)
-            endTime = time.time()
-            writeToCSVFile (localFile, endTime-startTime)
 
-            startTime = time.time()
-            syncGet(serverSock, x, y, z, cache, cacheLock)
-            endTime = time.time()
-            writeToCSVFile (syncFile, endTime-startTime)
+        if (getattr(currThread, "exit", False)):
+            return
+        try:
+            #print ("Waiting for activity on imgQueue")
+            path = imgQueue.get(timeout=2)
+        except:
+            continue;
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        serverAddress = (ServerIp, ServerPort)
+        sock.connect(serverAddress)
 
+        fileSize = getSize(path)
+        if (fileSize <= 0):
+            continue;
+        startTime = time.time()
+        localizationRequest(sock, fileSize, path)
+        (x,y,z) = getLocalizationResponse(sock)
+        sock.close()
+        endTime = time.time()
+        if not ((x == float('-inf')) and (y == float('-inf')) and (z == float('-inf'))):
+            writeToCSVFile(LocalizationCsv, endTime - startTime)
             pointQueue.put((float(x),float(y),float(z)))
-        serverSock.close()
-    except:
-        print (" Cannot connect to server ")
     return
 
 def cachingService (cache, cacheLock, queue):
@@ -144,13 +177,12 @@ def cachingService (cache, cacheLock, queue):
         if (getattr(currThread, "exit", False)):
             break
         try:
-            print ("Waiting for activity on pointQueue")
-            (x,y,r) = queue.get(timeout= 2)
+            #print ("Waiting for activity on pointQueue")
+            (x,y,z) = queue.get(timeout= 2)
         except:
             continue;
-        if (r == -1):
-            break;
-        fetchAround(x,y,r,cache,cacheLock)
+        syncGet(x, y, z, cache, cacheLock)
+        fetchAround(x, y, z, cache, cacheLock)
     return
 
 def main (Cache, CacheLock, imgQueue, pointQueue):
@@ -171,21 +203,51 @@ def main (Cache, CacheLock, imgQueue, pointQueue):
         serverSock.close()
     return;
 
+
+
 def guiService (cache,imgQueue):
     currThread = threading.currentThread()
-    if True:
-        if (getattr(currThread, "exit", False)):
-            return
-        Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
-        filename = filedialog.askopenfilename()  # show an "Open" dialog box and return the path to the selected file
-        imgQueue.put(filename)
+
+    class S(BaseHTTPRequestHandler):
+        def _set_headers(self):
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+
+        def do_GET(self):
+            print self.path
+            query_dict =  parse_qs(self.path[2:])
+            file_path = query_dict.get("url")[0]
+            print file_path
+            imgQueue.put(file_path)
+            self._set_headers()
+            self.wfile.write("<html><body><h1>File location has been sent</h1></body></html>")
+
+        def do_HEAD(self):
+            self._set_headers()
+
+        def do_POST(self):
+            # Doesn't do anything with posted data
+            self._set_headers()
+            self.wfile.write("<html><body><h1>Post</h1></body></html>")
+
+    server_address = ('', 8099)
+    server_class=HTTPServer
+    handler_class=S
+    httpd = server_class(server_address, handler_class)
+    #print 'Starting httpd...'
+    httpd.serve_forever()
     return
 
 # Initializing Cache and CacheLock
-global LocalizationCsv, SyncFetchCsv, AsyncFetchCsv, localFile, syncFile, asyncFile
-localFile = open(LocalizationCsv, "wb")
-syncFile = open(SyncFetchCsv, "wb")
-asyncFile = open(AsyncFetchCsv, "wb")
+global LocalizationCsv, SyncFetchCsv, AsyncFetchCsv
+file = open(LocalizationCsv, "w")
+file.close()
+file = open(SyncFetchCsv, "w")
+file.close()
+file = open(AsyncFetchCsv, "w")
+file.close()
+
 
 Cache = dict()
 CacheLock = threading.Lock()
@@ -219,6 +281,3 @@ cacheThread.join()
 imgProcessThread.join()
 guiThread.join()
 
-localFile.close()
-syncFile.close()
-asyncFile.close()
