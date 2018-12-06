@@ -1,28 +1,49 @@
 
 <?php
-  $csv_file_loc = "/tmp/Localization.csv";
-  $csv_file_sync = "/tmp/SyncFetch.csv";
-  $csv_file_async = "/tmp/AsyncFetch.csv";
-  $csv_trajectory = "/tmp/Trajectory.csv";
-
-
+  $csv_file_loc = "test_csv/Localization.csv";
+  $csv_file_sync = "test_csv/SyncFetch.csv";
+  $csv_file_async = "test_csv/AsyncFetch.csv";
+  $csv_trajectory = "test_csv/Trajectory.csv";
 
   if(isset($_REQUEST["trajectory"]) && $_REQUEST["trajectory"]){
 
     $labels = array();
     $time = array();
     $file = fopen($csv_trajectory, 'r');
+    $localization = array();
+    $sync = array();
+    $async = array();
 
     while (($line = fgetcsv($file)) !== FALSE) {
-      $first[] = $line[0];
-      $second[] = $line[1];
-      $third[] = $line[2];
+      $type = $line[0];
+      $localization_val= array();
+      $sync_val = array();
+      $async_val = array();
+      if($type == 1){
+        $localization_val['x'] = $line[1];
+        $localization_val['y'] = $line[2];
+        $localization[] = $localization_val;
+      }
+      else if($type == 2){
+        $sync_val['x'] = $line[1];
+        $sync_val['y'] = $line[2];
+        $sync_val['r'] = $line[4] * 50;
+        $sync[] = $sync_val;
+      }
+      else if($type == 3){
+        $async_val['x'] = $line[1];
+        $async_val['y'] = $line[2];
+        $async_val['r'] = $line[4] * 50;
+        $async[] = $async_val;
+      }
     }
 
     $map = array();
-    $map['x'] = $first;
-    $map['y'] = $second;
-    $map['type'] = $third;
+
+    $map['localization'] = $localization;
+    $map['sync'] = $sync;
+    $map['async'] = $async;
+
     fclose($file);
 
     $response_json = json_encode($map);

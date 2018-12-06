@@ -133,7 +133,7 @@ function getCSVDataForGraph(){
       success: function(resultData) {
       //   console.log(resultData);
          var json = JSON.parse(resultData);
-         console.log(json);
+      //   console.log(json);
          graph1(json.label, json.async, json.localization, json.sync);
 
       }
@@ -145,9 +145,11 @@ function getCSVDataForGraph(){
       url: url,
       dataType: "text",
       success: function(resultData) {
-        console.log(resultData);
+  //      console.log(resultData);
          var json = JSON.parse(resultData);
-         graph4(json.x, json.y);
+         console.log(json.localization);
+
+         trajectory_graph(json.localization, json.sync, json.async);
 
       }
   });
@@ -192,55 +194,54 @@ function graph1(labels, async1, localization, sync1){
                 }
             }]
         },
-          animation: {
+        animation: {
             duration: 0
-            }
+        }
       }
   });
 }
 
-function graph4(labels, data){
+function trajectory_graph(localization, sync, async){
   var ctx3 = document.getElementById("trajectory").getContext('2d');
-  var myChart = new Chart(ctx3, {
-      type: 'line',
-      data: {
-        //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-        labels: labels,
-          datasets: [{
-              label: 'trajectory',
-              data: data,
-              backgroundColor: [
-                  'rgba(255, 99, 132, 0.2)',
-                  'rgba(54, 162, 235, 0.2)',
-                  'rgba(255, 206, 86, 0.2)',
-                  'rgba(75, 192, 192, 0.2)',
-                  'rgba(153, 102, 255, 0.2)',
-                  'rgba(255, 159, 64, 0.2)'
-              ],
-              borderColor: [
-                  'rgba(255,99,132,1)',
-                  'rgba(54, 162, 235, 1)',
-                  'rgba(255, 206, 86, 1)',
-                  'rgba(75, 192, 192, 1)',
-                  'rgba(153, 102, 255, 1)',
-                  'rgba(255, 159, 64, 1)'
-              ],
-              borderWidth: 1
-          }]
-      },
-      options: {
-          scales: {
-              yAxes: [{
-                  ticks: {
-                      beginAtZero:true
-                  }
-              }]
-          },
-          animation: {
-            duration: 0
-            }
-      }
-  });
+  var scatterChart = new Chart(ctx3, {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            type:'scatter',
+            label: 'Localization',
+            data: localization,
+            fill:false,
+            backgroundColor: 'rgba(255, 0, 0, 1)'
+        },{
+            type:'bubble',
+            label: 'Synchronous',
+            data: sync,
+            fill:false,
+            backgroundColor: "rgba(255,221,50,0.2)",
+            borderColor: "rgba(255,221,50,1)"
+        },
+        {
+            type:'bubble',
+            label: 'Asynchronous',
+            data: async,
+            fill:false,
+            backgroundColor: "rgba(60,186,159,0.2)",
+            borderColor: "rgba(60,186,159,1)"
+        }]
+    },
+    options: {
+        scales: {
+            xAxes: [{
+                type: 'linear',
+                position: 'bottom'
+            }]
+        },
+        animation:{
+          duration:0
+        }
+    }
+});
+
 }
 </script>
 
