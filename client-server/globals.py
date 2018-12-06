@@ -20,7 +20,7 @@ from urlparse import parse_qs
 MyIp = "127.0.0.1"
 MyPort = 11111
 
-ServerIp ="10.84.166.14"
+ServerIp ="10.84.117.149"
 ServerPort = 8001
 
 CurrentSession = 1
@@ -37,6 +37,7 @@ LocalizationCsv = SyncFetchCsv = AsyncFetchCsv  = None
 LocalizationCsv ="/tmp/Localization.csv"
 SyncFetchCsv ="/tmp/SyncFetch.csv"
 AsyncFetchCsv ="/tmp/AsyncFetch.csv"
+TrajectoryCsv = "/tmp/Trajectory.csv"
 
 plyViewerStarted = False
 """ Some Structures for Inter Process Communication """

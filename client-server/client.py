@@ -55,7 +55,7 @@ def getPlyResponse (sock):
     return binaryData
 
 def asyncGet(x, y, z, cache, cacheLock):
-    global radius
+    global radius, TrajectoryCsv
     if True:
         logClient (" Opportunistic fetching x,y,z,r "+str(x)+","+str(y)+","+str(z)+","+str(radius))
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -67,6 +67,8 @@ def asyncGet(x, y, z, cache, cacheLock):
         getPlyRequest (sock, x, y, z, radius)
         binaryData = getPlyResponse(sock)
         sock.close()
+
+        writeToCsvFile(TrajectoryCsv, "3," + str(x) + "," + str(y) + "," + str(z) + "," + str(radius))
         writeBinaryDataToFile(binaryData, outFilePath)
         startorUpdateDisplay(outFilePath)
 
@@ -117,7 +119,7 @@ def canSupressRequest (Cache, x, y, z):
     return False
 
 def syncGet (x, y, z, cache, cacheLock):
-    global radius,SyncFetchCsv
+    global radius, SyncFetchCsv, TrajectoryCsv
     if (True == canSupressRequest(Cache, x, y, z)):
         writeToCSVFile(SyncFetchCsv, 0)
         return;
@@ -131,7 +133,10 @@ def syncGet (x, y, z, cache, cacheLock):
     binaryData = getPlyResponse(sock)
     sock.close()
 
+
     endTime = time.time()
+
+    writeToCsvFile(TrajectoryCsv, "3," + str(x) + "," + str(y) + "," + str(z) + "," + str(radius))
     writeToCSVFile(SyncFetchCsv, endTime - startTime)
 
     writeBinaryDataToFile(binaryData, outFilePath)
@@ -143,7 +148,7 @@ def syncGet (x, y, z, cache, cacheLock):
     return
 
 def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
-    global LocalizationCsv
+    global LocalizationCsv,TrajectoryCsv,radius
     while True:
         currThread = threading.currentThread()
 
@@ -167,6 +172,7 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
         sock.close()
         endTime = time.time()
         if not ((x == float('-inf')) and (y == float('-inf')) and (z == float('-inf'))):
+            writeToCsvFile(TrajectoryCsv, "1,"+str(x)+","+str(y)+","+str(z)+","+str(radius))
             writeToCSVFile(LocalizationCsv, endTime - startTime)
             pointQueue.put((float(x),float(y),float(z)))
     return
@@ -240,12 +246,14 @@ def guiService (cache,imgQueue):
     return
 
 # Initializing Cache and CacheLock
-global LocalizationCsv, SyncFetchCsv, AsyncFetchCsv
+global LocalizationCsv, SyncFetchCsv, AsyncFetchCsv, TrajectoryCsv
 file = open(LocalizationCsv, "w")
 file.close()
 file = open(SyncFetchCsv, "w")
 file.close()
 file = open(AsyncFetchCsv, "w")
+file.close()
+file = open(TrajectoryCsv, "w")
 file.close()
 
 
