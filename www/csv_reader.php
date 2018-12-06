@@ -1,9 +1,9 @@
 
 <?php
-  $csv_file_loc = "test_csv/Localization.csv";
-  $csv_file_sync = "test_csv/SyncFetch.csv";
-  $csv_file_async = "test_csv/AsyncFetch.csv";
-  $csv_trajectory = "test_csv/Trajectory.csv";
+  $csv_file_loc = "/tmp/Localization.csv";
+  $csv_file_sync = "/tmp/SyncFetch.csv";
+  $csv_file_async = "/tmp/AsyncFetch.csv";
+  $csv_trajectory = "/tmp/Trajectory.csv";
 
   if(isset($_REQUEST["trajectory"]) && $_REQUEST["trajectory"]){
 
