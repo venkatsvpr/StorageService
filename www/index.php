@@ -84,16 +84,8 @@
         <!-- charts -->
     <div class="col-sm-7" id = "chart_div">
         <div class="row">
-            <div class="col-sm-6">
+            <div class="col-sm-12">
                 <canvas id="myChart1" width="500px" height="200"></canvas>
-            </div>
-            <div class="col-sm-6">
-                <canvas id="myChart2" width="500px" height="200"></canvas>
-            </div>
-        </div>
-        <div class="row" style="border-bottom:1px solid #eee;">
-            <div class="col-sm-6">
-                <canvas id="myChart3" width="500px" height="200"></canvas>
             </div>
         </div>
         <div class="row">
@@ -132,7 +124,7 @@ function sendFileName(file_path, server_path){
 }
 
 function getCSVDataForGraph(){
-  url = "http://localhost:8071/csv_reader.php?time-localization=true";
+  url = "http://localhost:8071/csv_reader.php?populate-time-graph=true";
 
   var saveData = $.ajax({
       type: 'GET',
@@ -141,33 +133,8 @@ function getCSVDataForGraph(){
       success: function(resultData) {
       //   console.log(resultData);
          var json = JSON.parse(resultData);
-         graph1(json.label, json.time);
-
-      }
-  });
-
-  url = "http://localhost:8071/csv_reader.php?time-sync=true";
-  var saveData = $.ajax({
-      type: 'GET',
-      url: url,
-      dataType: "text",
-      success: function(resultData) {
-      //   console.log(resultData);
-         var json = JSON.parse(resultData);
-         graph2(json.label, json.time);
-
-      }
-  });
-
-  url = "http://localhost:8071/csv_reader.php?time-async=true";
-  var saveData = $.ajax({
-      type: 'GET',
-      url: url,
-      dataType: "text",
-      success: function(resultData) {
-      //   console.log(resultData);
-         var json = JSON.parse(resultData);
-         graph3(json.label, json.time);
+      //   console.log(json);
+         graph1(json.label, json.async, json.localization, json.sync);
 
       }
   });
@@ -178,9 +145,11 @@ function getCSVDataForGraph(){
       url: url,
       dataType: "text",
       success: function(resultData) {
-        console.log(resultData);
+  //      console.log(resultData);
          var json = JSON.parse(resultData);
-         //graph3(json.label, json.time);
+         console.log(json.localization);
+
+         trajectory_graph(json.localization, json.sync, json.async);
 
       }
   });
@@ -188,35 +157,34 @@ function getCSVDataForGraph(){
 //  graph4();
 
 }
-function graph1(labels, data){
+function graph1(labels, async1, localization, sync1){
   var ctx1 = document.getElementById("myChart1").getContext('2d');
   var myChart = new Chart(ctx1, {
       type: 'line',
       data: {
-        //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-        labels: labels,
-          datasets: [{
-              label: 'Time taken for localization',
-                  data: data,
-                  fill: false,
-              backgroundColor: [
-                  'rgba(255, 99, 132, 0.2)',
-                  'rgba(54, 162, 235, 0.2)',
-                  'rgba(255, 206, 86, 0.2)',
-                  'rgba(75, 192, 192, 0.2)',
-                  'rgba(153, 102, 255, 0.2)',
-                  'rgba(255, 159, 64, 0.2)'
-              ],
-              borderColor: [
-                  'rgba(255,99,132,1)',
-                  'rgba(54, 162, 235, 1)',
-                  'rgba(255, 206, 86, 1)',
-                  'rgba(75, 192, 192, 1)',
-                  'rgba(153, 102, 255, 1)',
-                  'rgba(255, 159, 64, 1)'
-              ],
-              borderWidth: 1
-          }]
+        datasets: [{
+              label: 'asynchronous',
+              data: async1,
+              fill: false,
+						  borderColor: "red"
+            }, {
+              label: 'synchronous',
+              data: sync1,
+              // Changes this dataset to become a line
+              type: 'line',
+              fill: false,
+              borderColor:"green"
+            },
+            {
+              label: 'localization',
+              data:localization,
+              // Changes this dataset to become a line
+              type: 'line',
+              fill: false,
+              borderColor:"blue"
+            }
+          ],
+        labels: labels
       },
       options: {
         scales: {
@@ -226,144 +194,54 @@ function graph1(labels, data){
                 }
             }]
         },
-          animation: {
+        animation: {
             duration: 0
-            }
+        }
       }
   });
 }
 
-function graph2(labels, data){
-  var ctx2 = document.getElementById("myChart2").getContext('2d');
-  var myChart = new Chart(ctx2, {
-      type: 'line',
-      data: {
-        //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-        labels: labels,
-          datasets: [{
-              label: 'Time taken for synchronous requests',
-                  data: data,
-                  fill: false,
-              backgroundColor: [
-                  'rgba(255, 99, 132, 0.2)',
-                  'rgba(54, 162, 235, 0.2)',
-                  'rgba(255, 206, 86, 0.2)',
-                  'rgba(75, 192, 192, 0.2)',
-                  'rgba(153, 102, 255, 0.2)',
-                  'rgba(255, 159, 64, 0.2)'
-              ],
-              borderColor: [
-                  'rgba(255,99,132,1)',
-                  'rgba(54, 162, 235, 1)',
-                  'rgba(255, 206, 86, 1)',
-                  'rgba(75, 192, 192, 1)',
-                  'rgba(153, 102, 255, 1)',
-                  'rgba(255, 159, 64, 1)'
-              ],
-              borderWidth: 1
-          }]
-      },
-      options: {
-          scales: {
-              yAxes: [{
-                  ticks: {
-                      beginAtZero:true
-                  }
-              }]
-          },
-            animation: {
-              duration: 0
-              }
-      }
-  });
-}
-function graph3(labels, data){
-  var ctx3 = document.getElementById("myChart3").getContext('2d');
-  var myChart = new Chart(ctx3, {
-      type: 'line',
-      data: {
-        //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-        labels: labels,
-          datasets: [{
-              label: 'time taken for asynchronous request',
-                  data: data,
-                  fill: false,
-              backgroundColor: [
-                  'rgba(255, 99, 132, 0.2)',
-                  'rgba(54, 162, 235, 0.2)',
-                  'rgba(255, 206, 86, 0.2)',
-                  'rgba(75, 192, 192, 0.2)',
-                  'rgba(153, 102, 255, 0.2)',
-                  'rgba(255, 159, 64, 0.2)'
-              ],
-              borderColor: [
-                  'rgba(255,99,132,1)',
-                  'rgba(54, 162, 235, 1)',
-                  'rgba(255, 206, 86, 1)',
-                  'rgba(75, 192, 192, 1)',
-                  'rgba(153, 102, 255, 1)',
-                  'rgba(255, 159, 64, 1)'
-              ],
-              borderWidth: 1
-          }]
-      },
-      options: {
-          scales: {
-              yAxes: [{
-                  ticks: {
-                      beginAtZero:true
-                  }
-              }]
-          },
-            animation: {
-              duration: 0
-              }
-      }
-  });
-}
-
-function graph4(labels, data){
+function trajectory_graph(localization, sync, async){
   var ctx3 = document.getElementById("trajectory").getContext('2d');
-  var myChart = new Chart(ctx3, {
-      type: 'line',
-      data: {
-        //  labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-        labels: labels,
-          datasets: [{
-              label: '# of Votes',
-              data: data,
-              backgroundColor: [
-                  'rgba(255, 99, 132, 0.2)',
-                  'rgba(54, 162, 235, 0.2)',
-                  'rgba(255, 206, 86, 0.2)',
-                  'rgba(75, 192, 192, 0.2)',
-                  'rgba(153, 102, 255, 0.2)',
-                  'rgba(255, 159, 64, 0.2)'
-              ],
-              borderColor: [
-                  'rgba(255,99,132,1)',
-                  'rgba(54, 162, 235, 1)',
-                  'rgba(255, 206, 86, 1)',
-                  'rgba(75, 192, 192, 1)',
-                  'rgba(153, 102, 255, 1)',
-                  'rgba(255, 159, 64, 1)'
-              ],
-              borderWidth: 1
-          }]
-      },
-      options: {
-          scales: {
-              yAxes: [{
-                  ticks: {
-                      beginAtZero:true
-                  }
-              }]
-          },
-          animation: {
-            duration: 0
-            }
-      }
-  });
+  var scatterChart = new Chart(ctx3, {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            type:'scatter',
+            label: 'Localization',
+            data: localization,
+            fill:false,
+            backgroundColor: 'rgba(255, 0, 0, 1)'
+        },{
+            type:'bubble',
+            label: 'Synchronous',
+            data: sync,
+            fill:false,
+            backgroundColor: "rgba(255,221,50,0.2)",
+            borderColor: "rgba(255,221,50,1)"
+        },
+        {
+            type:'bubble',
+            label: 'Asynchronous',
+            data: async,
+            fill:false,
+            backgroundColor: "rgba(60,186,159,0.2)",
+            borderColor: "rgba(60,186,159,1)"
+        }]
+    },
+    options: {
+        scales: {
+            xAxes: [{
+                type: 'linear',
+                position: 'bottom'
+            }]
+        },
+        animation:{
+          duration:0
+        }
+    }
+});
+
 }
 </script>
 
