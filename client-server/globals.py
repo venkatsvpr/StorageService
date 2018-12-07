@@ -20,7 +20,7 @@ from urlparse import parse_qs
 MyIp = "127.0.0.1"
 MyPort = 11111
 
-ServerIp ="10.84.117.149"
+ServerIp ="127.0.0.1"
 ServerPort = 8001
 
 CurrentSession = 1
