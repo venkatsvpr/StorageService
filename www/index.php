@@ -55,12 +55,12 @@
     <!-- Page Content -->
     <div class="container-fluid">
     <div class="row">
-    <div class="col-sm-5" style="border-right:1px solid #eee; ">
+    <div class="col-sm-6" style="border-right:1px solid #eee; ">
               <h3 class="my-4 text-center text-lg-left">Virtual Locations of the User </h3>
-              <div class="col-sm-12" style="height:300px">
-                   <img id="preview-image" src="" alt="Current Location of the User" height="300px" width="100%">
+              <div class="col-sm-12" style="height:450px">
+                   <img id="preview-image" src="" alt=" Please select an image" height="450px" width="100%">
               </div>
-              <div class="col-sm-12" style="overflow-y: scroll; height:450px; margin-top:10px;">
+              <div class="col-sm-12" style="overflow-y: scroll; height:350px; margin-top:10px;">
               <div class="row text-center text-lg-left">
 
                 <?php
@@ -69,9 +69,9 @@
                     //$files_dir = $dir.$pic_directory;
                     foreach(glob($pic_directory.'/*.jpg') as $file) {
                         $go = realpath($file);
-                        print("<div class='col-lg-3 col-md-4 col-xs-6'>
+                        print("<div class='col-lg-3 col-md-4 col-xs-6' style='height:120px;width:auto'>
                                     <a href='#' class='d-block mb-4 h-150'>
-                                        <img class='img-fluid img-thumbnail' src='$file' onclick='sendFileName(\"$go\",\"$file\")'>
+                                        <img class='img-fluid img-thumbnail'  src='$file' onclick='sendFileName(\"$go\",\"$file\")'>
                                     </a>
                                 </div>");
                     }
@@ -82,15 +82,15 @@
             </div>
     </div>
         <!-- charts -->
-    <div class="col-sm-7" id = "chart_div">
+    <div class="col-sm-6" id = "chart_div">
         <div class="row">
             <div class="col-sm-12">
-                <canvas id="myChart1" width="500px" height="200"></canvas>
+                <canvas id="myChart1" width="500px" height="250"></canvas>
             </div>
         </div>
         <div class="row">
           <div class="col-sm-12">
-            <canvas id = "trajectory" width = "500px" height = "200"></canvas>
+            <canvas id = "trajectory" width = "500px" height = "250"></canvas>
           </div>
         <div>
     </div>
@@ -231,10 +231,16 @@ function trajectory_graph(localization, sync, async){
     },
     options: {
         scales: {
-            xAxes: [{
-                type: 'linear',
-                position: 'bottom'
-            }]
+          yAxes: [{
+            scaleLabel: {
+              display: true,
+            }
+          }],
+          xAxes: [{
+            scaleLabel: {
+              display: true,
+            }
+          }]
         },
         animation:{
           duration:0
