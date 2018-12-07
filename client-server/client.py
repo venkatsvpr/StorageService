@@ -126,7 +126,7 @@ def canSupressRequest (Cache, x, y, z):
     if (0 == pq.qsize()):
         return False
     (dist, tup) = pq.get()
-    if (dist < (radius/3)):
+    if (dist < (radius)):
         return True
     return False
 
