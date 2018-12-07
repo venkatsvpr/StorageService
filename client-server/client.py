@@ -1,5 +1,16 @@
 from globals import *
 
+# Temporary for testing...  -venkat
+def writeToCSVFile2 (filePath, content):
+    global csvLock
+    csvLock.acquire()
+    file = open(filePath, "a")
+    file.write(str(content)+"\n")
+    file.close()
+    csvLock.release()
+    return
+
+
 def writeToCSVFile (filePath, content):
     global csvLock
     csvLock.acquire()
@@ -68,7 +79,8 @@ def asyncGet(x, y, z, cache, cacheLock):
         binaryData = getPlyResponse(sock)
         sock.close()
 
-        writeToCsvFile(TrajectoryCsv, "3," + str(x) + "," + str(y) + "," + str(z) + "," + str(radius))
+    
+        writeToCSVFile2 (TrajectoryCsv, "3," + str(x) + "," + str(y) + "," + str(z) + "," + str(radius))
         writeBinaryDataToFile(binaryData, outFilePath)
         startorUpdateDisplay(outFilePath)
 
@@ -136,7 +148,7 @@ def syncGet (x, y, z, cache, cacheLock):
 
     endTime = time.time()
 
-    writeToCsvFile(TrajectoryCsv, "3," + str(x) + "," + str(y) + "," + str(z) + "," + str(radius))
+    writeToCSVFile2(TrajectoryCsv, "3," + str(x) + "," + str(y) + "," + str(z) + "," + str(radius))
     writeToCSVFile(SyncFetchCsv, endTime - startTime)
 
     writeBinaryDataToFile(binaryData, outFilePath)
@@ -172,7 +184,7 @@ def imgProcessingService (cache, cacheLock, imgQueue, pointQueue):
         sock.close()
         endTime = time.time()
         if not ((x == float('-inf')) and (y == float('-inf')) and (z == float('-inf'))):
-            writeToCsvFile(TrajectoryCsv, "1,"+str(x)+","+str(y)+","+str(z)+","+str(radius))
+            writeToCSVFile2(TrajectoryCsv, "1,"+str(x)+","+str(y)+","+str(z)+","+str(radius))
             writeToCSVFile(LocalizationCsv, endTime - startTime)
             pointQueue.put((float(x),float(y),float(z)))
     return
