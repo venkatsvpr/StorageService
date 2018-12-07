@@ -163,12 +163,12 @@ function graph1(labels, async1, localization, sync1){
       type: 'line',
       data: {
         datasets: [{
-              label: 'asynchronous',
+              label: 'Asynchronous',
               data: async1,
               fill: false,
 						  borderColor: "red"
             }, {
-              label: 'synchronous',
+              label: 'Synchronous',
               data: sync1,
               // Changes this dataset to become a line
               type: 'line',
@@ -176,7 +176,7 @@ function graph1(labels, async1, localization, sync1){
               borderColor:"green"
             },
             {
-              label: 'localization',
+              label: 'Localization',
               data:localization,
               // Changes this dataset to become a line
               type: 'line',
