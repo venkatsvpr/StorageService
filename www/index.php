@@ -14,7 +14,7 @@
        window.onload = setupRefresh;
        function setupRefresh()
        {
-           setInterval("getCSVDataForGraph();",5000);
+           setInterval("getCSVDataForGraph();",1000);
        }
  </script>
 
@@ -29,6 +29,7 @@
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="vendor/chart-js/Chart.bundle.js"></script>
     <script src="vendor/chart-js/chartjs-init.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   </head>
 
   <body>
@@ -53,23 +54,25 @@
     </nav>
 
     <!-- Page Content -->
-    <div class="container-fluid">
-    <div class="row">
-    <div class="col-sm-6" style="border-right:1px solid #eee; ">
-              <h3 class="my-4 text-center text-lg-left">Virtual Locations of the User </h3>
-              <div class="col-sm-12" style="height:450px">
-                   <img id="preview-image" src="" alt=" Please select an image" height="450px" width="100%">
-              </div>
-              <div class="col-sm-12" style="overflow-y: scroll; height:350px; margin-top:10px;">
+    <div class="container-fluid" style="height:100%;text-align:center;">
+    <div class="line">
+        <div class="col-md-6 quad" style="padding-top:10px;border-right:1px lightgrey solid;">
+              <h3 style="position:absolute;top:40%;left:40%;z-index:-1;">Select image</h3>
+              <img id="preview-image" src="" height="90%">
+        </div>
+        <div class="col-md-6 quad">
+            <canvas id="myChart1" style=""></canvas>
+        </div>
+        <div class="col-md-6 quad" style="overflow-y: scroll;border-right:1px lightgrey solid;">
               <div class="row text-center text-lg-left">
 
-                <?php
+               <?php
                     //$dir = getcwd()."/";
                     $pic_directory = "user_loc_rgb";
                     //$files_dir = $dir.$pic_directory;
                     foreach(glob($pic_directory.'/*.jpg') as $file) {
                         $go = realpath($file);
-                        print("<div class='col-lg-3 col-md-4 col-xs-6' style='height:120px;width:auto'>
+                        print("<div class='col-lg-2 col-md-3 col-xs-6' style='height:80px;width:auto'>
                                     <a href='#' class='d-block mb-4 h-150'>
                                         <img class='img-fluid img-thumbnail'  src='$file' onclick='sendFileName(\"$go\",\"$file\")'>
                                     </a>
@@ -79,42 +82,19 @@
 
 
               </div>
-            </div>
-    </div>
-        <!-- charts -->
-    <div class="col-sm-6" id = "chart_div">
-        <div class="row">
-            <div class="col-sm-12">
-                <canvas id="myChart1" width="500px" height="250"></canvas>
-            </div>
         </div>
-        <div class="row">
-          <div class="col-sm-12">
-            <canvas id = "trajectory" width = "500px" height = "250"></canvas>
-          </div>
-        <div>
+        <div id="traj" class="col-md-6 quad" style="height:100%; width:100%;">
+        </div>
     </div>
-</div>
-</div>
-    <!-- /.container -->
 
-    <!-- Footer -->
-    <!-- <footer class="py-5 bg-dark">
-      <div class="container">
-        <p class="m-0 text-center text-white">Copyright &copy; Your Website 2017</p>
-      </div>
-    </footer> -->
-
-    <!-- Bootstrap core JavaScript -->
-<div id ="temp"></div>
-  </body>
-  <script>
+</body>
+<script>
 
 
 function sendFileName(file_path, server_path){
 
   $('#preview-image').attr('src', server_path);
-  console.log(file_path);
+  // console.log(file_path);
    getCSVDataForGraph();
    url ="http://localhost:8099?url="+file_path;
    var xmlHttp = new XMLHttpRequest();
@@ -147,7 +127,7 @@ function getCSVDataForGraph(){
       success: function(resultData) {
   //      console.log(resultData);
          var json = JSON.parse(resultData);
-         console.log(json.localization);
+        //  console.log(json.localization);
 
          trajectory_graph(json.localization, json.sync, json.async);
 
@@ -164,12 +144,12 @@ function graph1(labels, async1, localization, sync1){
       data: {
         datasets: [{
               label: 'Asynchronous',
-              data: async1,
+              data: async1.slice(Math.max(async1.length - 30, 1)),
               fill: false,
 						  borderColor: "red"
             }, {
               label: 'Synchronous',
-              data: sync1,
+              data: sync1.slice(Math.max(sync1.length - 30, 1)),
               // Changes this dataset to become a line
               type: 'line',
               fill: false,
@@ -177,14 +157,14 @@ function graph1(labels, async1, localization, sync1){
             },
             {
               label: 'Localization',
-              data:localization,
+              data:localization.slice(Math.max(localization.length - 30, 1)),
               // Changes this dataset to become a line
               type: 'line',
               fill: false,
               borderColor:"blue"
             }
           ],
-        labels: labels
+        labels: labels.slice(Math.max(labels.length - 30, 1))
       },
       options: {
         scales: {
@@ -202,51 +182,52 @@ function graph1(labels, async1, localization, sync1){
 }
 
 function trajectory_graph(localization, sync, async){
-  var ctx3 = document.getElementById("trajectory").getContext('2d');
-  var scatterChart = new Chart(ctx3, {
+
+  localization_points = {
+    x: localization.map(pair => pair.x),
+    y: localization.map(pair => pair.y),
+    mode: 'markers',
     type: 'scatter',
-    data: {
-        datasets: [{
-            type:'scatter',
-            label: 'Localization',
-            data: localization,
-            fill:false,
-            backgroundColor: 'rgba(255, 0, 0, 1)'
-        },{
-            type:'bubble',
-            label: 'Synchronous',
-            data: sync,
-            fill:false,
-            backgroundColor: "rgba(255,221,50,0.2)",
-            borderColor: "rgba(255,221,50,1)"
-        },
-        {
-            type:'bubble',
-            label: 'Asynchronous',
-            data: async,
-            fill:false,
-            backgroundColor: "rgba(60,186,159,0.2)",
-            borderColor: "rgba(60,186,159,1)"
-        }]
-    },
-    options: {
-        scales: {
-          yAxes: [{
-            scaleLabel: {
-              display: true,
-            }
-          }],
-          xAxes: [{
-            scaleLabel: {
-              display: true,
-            }
-          }]
-        },
-        animation:{
-          duration:0
-        }
+    marker: { size: 2, color: 'rgb(255, 0, 0)' }
+  };
+  
+  var async_circles = async.map(pair => { return {
+    type: 'circle',
+    xref: 'x',
+    yref: 'y',
+    fillcolor: 'rgba(29, 192, 33, 0.08)',
+    x0: parseFloat(pair.x) - 3.5,
+    y0: parseFloat(pair.y) - 3.5,
+    x1: parseFloat(pair.x) + 3.5,
+    y1: parseFloat(pair.y) + 3.5,
+    line: {
+      color: 'rgba(29, 192, 33, 0.15)',
+      width: 1
     }
-});
+  }});
+
+
+  var layout = {
+    xaxis: {
+      range: [-5, 60],
+      zeroline: true,
+      dtick: 5,
+    },
+    yaxis: {
+      range: [-5, 25],
+      scaleanchor: "x",
+      dtick: 5
+    },
+    margin: {
+      t: 40, //top margin
+      l: 40, //left margin
+      r: 40, //right margin
+      b: 40 //bottom margin
+    },
+    shapes: async_circles
+  };
+
+  Plotly.newPlot('traj', [localization_points], layout);
 
 }
 </script>

@@ -4,12 +4,40 @@
  * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap-thumbnail-gallery/blob/master/LICENSE)
  */
 
+
+
+
+html,body {
+        padding: 0px;
+        margin:0;
+        height:100%;
+        min-height:100%;
+      }
 body {
   padding-top: 54px;
 }
 
-@media (min-width: 992px) {
-  body {
-    padding-top: 56px;
+
+.quad{
+width:50%;
+height:100%;
+float:left;
+}
+.line{
+height:50%;
+width:100%;
+}
+  
+
+.equal, .equal > div[class*='col-'] {  
+      display: -webkit-box;
+      display: -moz-box;
+      display: -ms-flexbox;
+      display: -webkit-flex;
+      display: flex;
+      flex:1 0 auto;
   }
+
+  .modebar{
+      display: none !important;
 }
